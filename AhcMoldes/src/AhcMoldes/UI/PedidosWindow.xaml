@@ -1,0 +1,65 @@
+<Window x:Class="AhcMoldes.UI.PedidosWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Pedidos online" Width="640" Height="520" MinWidth="480" MinHeight="360"
+        WindowStartupLocation="CenterScreen" ShowInTaskbar="False" FontFamily="Segoe UI" FontSize="12">
+  <Window.Resources>
+    <ResourceDictionary>
+      <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="/AhcMoldes;component/UI/Theme.xaml"/>
+      </ResourceDictionary.MergedDictionaries>
+    </ResourceDictionary>
+  </Window.Resources>
+
+  <DockPanel Background="{StaticResource Bg}">
+    <Border DockPanel.Dock="Top" Padding="12,10">
+      <StackPanel>
+        <TextBlock Text="Pedidos online" FontSize="16" FontWeight="SemiBold"/>
+        <TextBlock Style="{StaticResource Hint}" Text="Crie o pedido, mande o link para o cliente preencher e, quando ele enviar, escolha o pedido aqui para montar."/>
+      </StackPanel>
+    </Border>
+
+    <!-- novo pedido -->
+    <Border DockPanel.Dock="Top" Margin="12,0,12,8" Padding="10,8" CornerRadius="7" Background="{StaticResource Card}" BorderBrush="{StaticResource Line}" BorderThickness="1">
+      <StackPanel>
+        <Grid>
+          <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+          <TextBox x:Name="NovaRef" ToolTip="Referência do pedido (ex.: nome do time)"/>
+          <Button Grid.Column="1" Content="+  Novo pedido" Style="{StaticResource Primary}" Padding="12,6" Click="Novo_Click"/>
+        </Grid>
+        <Grid x:Name="LinkBox" Visibility="Collapsed" Margin="0,6,0,0">
+          <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+          <TextBox x:Name="LinkTxt" IsReadOnly="True"/>
+          <Button Grid.Column="1" Content="Copiar link" Click="CopiarNovo_Click"/>
+          <Button Grid.Column="2" Content="Abrir" Click="AbrirNovo_Click"/>
+        </Grid>
+      </StackPanel>
+    </Border>
+
+    <!-- ações -->
+    <Border DockPanel.Dock="Bottom" Padding="12,8" Background="#FF232325" BorderBrush="{StaticResource Line}" BorderThickness="0,1,0,0">
+      <Grid>
+        <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+        <Button Content="Atualizar" Click="Atualizar_Click"/>
+        <Button Grid.Column="1" Content="Copiar link" Click="CopiarSel_Click"/>
+        <Button Grid.Column="2" Content="Encerrar pedido" Click="Encerrar_Click"/>
+        <TextBlock x:Name="Info" Grid.Column="3" VerticalAlignment="Center" Margin="10,0" Foreground="{StaticResource FgDim}" TextTrimming="CharacterEllipsis"/>
+        <Button Grid.Column="4" Content="Usar este pedido" Style="{StaticResource Primary}" Padding="16,8" Click="Usar_Click"/>
+      </Grid>
+    </Border>
+
+    <DockPanel Margin="12,0,12,8">
+      <CheckBox DockPanel.Dock="Top" x:Name="MostrarEncerrados" Content="Mostrar pedidos encerrados" Click="Atualizar_Click"/>
+      <DataGrid x:Name="Lista" AutoGenerateColumns="False" IsReadOnly="True" SelectionMode="Single"
+                HeadersVisibility="Column" RowHeaderWidth="0" MouseDoubleClick="Lista_MouseDoubleClick">
+        <DataGrid.Columns>
+          <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="80"/>
+          <DataGridTextColumn Header="Referência" Binding="{Binding Referencia}" Width="*"/>
+          <DataGridTextColumn Header="Cliente" Binding="{Binding Cliente}" Width="*"/>
+          <DataGridTextColumn Header="Peças" Binding="{Binding Pecas}" Width="55"/>
+          <DataGridTextColumn Header="Data" Binding="{Binding Data}" Width="100"/>
+        </DataGrid.Columns>
+      </DataGrid>
+    </DockPanel>
+  </DockPanel>
+</Window>

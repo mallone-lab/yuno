@@ -1,0 +1,7 @@
+bin/
+obj/
+tools/obj/
+*.user
+*.suo
+.vs/
+*.old
