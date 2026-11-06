@@ -1,4 +1,4 @@
-# AHC Moldes
+﻿# YUNO
 
 Add-on para **CorelDRAW 2026** que monta moldes graduados para uniformes sublimados.
 
@@ -6,29 +6,33 @@ Add-on para **CorelDRAW 2026** que monta moldes graduados para uniformes sublima
 - **Aplicar matrizes:** copia a arte de cada matriz para todos os tamanhos, ajustando a graduação.
 - **Montar pedido:** lê a planilha ou o pedido online e cria as peças **embaixo do molde de cada tamanho**, com nome e número. Os textos `NOME` e `10` são reconhecidos sozinhos, acompanham o tamanho e diminuem para caber na peça.
 - **Ferramentas, Encaixe sobre outro, Exportar (JPG/PDF/TIF/PNG) e Configurações.**
-- **Pedidos online:** formulário web onde o cliente preenche o pedido (`AhcMoldes/web`), com banco no Supabase.
+- **Pedidos online:** formulário web onde o cliente preenche o pedido (`Yuno/web`), com banco no Supabase.
 
 ## Instalar
-Botão direito em `AhcMoldes/instalar.ps1` → **Executar com o PowerShell**. Depois abra o Corel: aparece a barra **AHC Moldes** no topo e o menu **Janela > AHC Moldes**.
+Baixe o **YunoSetup.exe** (aba *Releases*), dê dois cliques e clique em **Instalar**. Ele encontra o CorelDRAW 2026, instala, ativa a barra **YUNO** no topo e aparece em *Configurações > Aplicativos* para desinstalar.
 
-Guia de uso: [AhcMoldes/COMO-USAR.md](AhcMoldes/COMO-USAR.md) · Pedidos online: [AhcMoldes/web/CONFIGURAR-PEDIDOS-ONLINE.md](AhcMoldes/web/CONFIGURAR-PEDIDOS-ONLINE.md)
+Para gerar o instalador: `powershell -ExecutionPolicy Bypass -File Yuno/build.ps1` → `Yuno/release/YunoSetup.exe`.
+
+Marca: [Yuno/brand/MARCA.md](Yuno/brand/MARCA.md)
+
+Guia de uso: [Yuno/COMO-USAR.md](Yuno/COMO-USAR.md) · Pedidos online: [Yuno/web/CONFIGURAR-PEDIDOS-ONLINE.md](Yuno/web/CONFIGURAR-PEDIDOS-ONLINE.md)
 
 ## Compilar
 Requisitos: .NET SDK e CorelDRAW 2026 instalado (usa `Corel.Interop.VGCore.dll` da pasta do Corel).
 
 ```
-cd AhcMoldes/src/AhcMoldes
+cd Yuno/src/Yuno
 dotnet build -c Release
 ```
 
-Os ícones e os arquivos da barra (`Addon/AppUI.xslt`, `UserUI.xslt`, `config.xml`, `AhcMoldesRes.dll`) são gerados por `AhcMoldes/tools/gerar_barra.py` (requer Pillow).
+Os ícones e os arquivos da barra (`Addon/AppUI.xslt`, `UserUI.xslt`, `config.xml`, `YunoRes.dll`) são gerados por `Yuno/tools/gerar_barra.py` (requer Pillow).
 
 ## Estrutura
 ```
-AhcMoldes/
-  src/AhcMoldes/Engine   lógica (moldes, montagem, encaixe, exportação, pedidos online)
-  src/AhcMoldes/UI       painéis WPF (tema escuro) e janela de pedidos online
-  src/AhcMoldes/Addon    registro no Corel (menu, barra, ícones)
+Yuno/
+  src/Yuno/Engine   lógica (moldes, montagem, encaixe, exportação, pedidos online)
+  src/Yuno/UI       painéis WPF (tema escuro) e janela de pedidos online
+  src/Yuno/Addon    registro no Corel (menu, barra, ícones)
   dist/                  arquivos prontos para instalar
   web/                   formulário de pedido + SQL do Supabase
   tests/                 teste de ponta a ponta via COM

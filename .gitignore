@@ -5,3 +5,6 @@ tools/obj/
 *.suo
 .vs/
 *.old
+
+Yuno/dist/
+Yuno/release/

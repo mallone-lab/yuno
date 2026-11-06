@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net48</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <LangVersion>latest</LangVersion>
+    <AssemblyName>YunoSetup</AssemblyName>
+    <RootNamespace>YunoSetup</RootNamespace>
+    <ApplicationIcon>..\..\src\Yuno\UI\Assets\yuno.ico</ApplicationIcon>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <Version>1.1.0</Version>
+    <Product>YUNO</Product>
+    <Company>YUNO</Company>
+    <Description>Instalador do YUNO para CorelDRAW</Description>
+    <GenerateSupportedRuntime>false</GenerateSupportedRuntime>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- arquivos do add-on vão DENTRO do .exe -->
+    <EmbeddedResource Include="..\..\dist\*" LogicalName="payload/%(Filename)%(Extension)" />
+    <Resource Include="..\..\src\Yuno\UI\Assets\yuno-icone.png" Link="yuno-icone.png" />
+    <Reference Include="System.IO.Compression" />
+    <Reference Include="System.IO.Compression.FileSystem" />
+  </ItemGroup>
+
+</Project>

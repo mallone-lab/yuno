@@ -1,0 +1,272 @@
+﻿<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Formulário de pedido</title>
+<link rel="icon" href="yuno.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f4f5f8; --card:#ffffff; --ink:#1b1d23; --dim:#626877; --line:#e2e5ec;
+    --accent:#13865A; --accent-ink:#ffffff; --ok:#1E9E5E; --brand:linear-gradient(135deg,#4ADE80 0%,#22B06A 45%,#0E6E4A 80%,#083428 100%); --warn:#b7791f; --err:#d64545; --input:#ffffff;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#1E1F21; --card:#2A2B2E; --ink:#F2F3F5; --dim:#9AA0A8; --line:#3A3C40;
+      --accent:#2ECC71; --input:#17181A;
+    }
+  }
+  :root[data-theme="dark"]{ --bg:#1E1F21; --card:#2A2B2E; --ink:#F2F3F5; --dim:#9AA0A8; --line:#3A3C40; --accent:#2ECC71; --input:#17181A; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 Inter,system-ui,-apple-system,Segoe UI,sans-serif}
+  header{background:var(--brand);color:#fff;padding:22px 16px 26px}
+  header .sub{opacity:.85;font-size:13px;font-weight:500}
+  header .wrap{display:flex;align-items:center;gap:12px}
+  header b{font-size:18px;letter-spacing:.2px}
+  .wrap{max-width:980px;margin:0 auto}
+  main{padding:16px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px;margin-bottom:14px}
+  h1{font-size:22px;margin:0 0 4px}
+  h2{font-size:15px;margin:0 0 12px}
+  .muted{color:var(--dim);font-size:13px}
+  label{display:block;font-size:13px;color:var(--dim);margin:10px 0 4px}
+  input,select{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:8px;background:var(--input);color:var(--ink);font:inherit}
+  input:focus,select:focus{outline:2px solid var(--accent);outline-offset:-1px}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:0 12px}
+  .row-form{display:grid;grid-template-columns:1.2fr 2fr .8fr 1.4fr 1fr 1fr .7fr auto;gap:8px;align-items:end}
+  button{border:0;border-radius:8px;padding:10px 14px;font:600 14px Inter,system-ui,sans-serif;cursor:pointer;background:var(--line);color:var(--ink)}
+  button.primary{background:var(--accent);color:var(--accent-ink)}
+  button.ok{background:var(--brand);color:#fff}
+  button.ghost{background:transparent;border:1px solid var(--line)}
+  button.danger{background:transparent;color:var(--err);border:1px solid var(--err);padding:6px 10px}
+  button:disabled{opacity:.5;cursor:default}
+  .tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  th{text-align:left;font-size:12px;color:var(--dim);font-weight:600;padding:6px;border-bottom:1px solid var(--line)}
+  td{padding:4px 6px;border-bottom:1px solid var(--line)}
+  td input,td select{padding:6px 7px}
+  .scroll{overflow-x:auto}
+  .summary{display:flex;gap:18px;flex-wrap:wrap;justify-content:flex-end;font-size:14px}
+  .chip{display:inline-block;background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:2px 9px;margin:2px;font-size:13px}
+  .msg{padding:10px 12px;border-radius:8px;margin-bottom:12px;font-size:14px;display:none}
+  .msg.show{display:block}
+  .msg.ok{background:color-mix(in srgb,var(--ok) 15%,transparent);color:var(--ok)}
+  .msg.err{background:color-mix(in srgb,var(--err) 15%,transparent);color:var(--err)}
+  .msg.warn{background:color-mix(in srgb,var(--warn) 15%,transparent);color:var(--warn)}
+  .status{font-size:12px;font-weight:600;padding:3px 10px;border-radius:999px;background:var(--line)}
+  .foot{color:var(--dim);font-size:12px;text-align:center;padding:10px 0 30px}
+  @media (max-width:760px){
+    .grid3{grid-template-columns:1fr}
+    .row-form{grid-template-columns:1fr 1fr}
+    .row-form .wide{grid-column:1/-1}
+    main{padding:12px}
+  }
+</style>
+</head>
+<body>
+<header><div class="wrap"><div><b id="empresa">Pedido</b><div class="sub">Formulário de pedido</div></div></div></header>
+<main class="wrap">
+  <div id="msg" class="msg"></div>
+
+  <div class="card" id="cabecalho">
+    <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start">
+      <div>
+        <h1>Formulário de pedido</h1>
+        <div class="muted">Referência: <b id="referencia">—</b></div>
+      </div>
+      <span class="status" id="status">carregando…</span>
+    </div>
+    <div class="grid3">
+      <div><label for="cNome">Nome completo (obrigatório)</label><input id="cNome" autocomplete="name"></div>
+      <div><label for="cTel">Telefone</label><input id="cTel" placeholder="(00) 00000-0000" autocomplete="tel"></div>
+      <div><label for="cEmail">E-mail</label><input id="cEmail" type="email" autocomplete="email"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Importar planilha</h2>
+    <p class="muted" style="margin-top:-6px">Baixe o modelo, preencha no Excel e importe. Colunas: Tipo, Nome, Número, Adicional, Tam. Camiseta, Tam. Calção, Quantidade.</p>
+    <div class="tools">
+      <input type="file" id="arquivo" accept=".xlsx,.xls,.csv" style="max-width:340px">
+      <button class="primary" id="btnImportar">Importar planilha</button>
+      <button class="ghost" id="btnModelo">Baixar modelo</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Itens</h2>
+    <div class="row-form" id="novo">
+      <div><label>Tipo</label><select id="nTipo"></select></div>
+      <div class="wide"><label>Nome</label><input id="nNome"></div>
+      <div><label>Número</label><input id="nNum" inputmode="numeric"></div>
+      <div><label>Adicional</label><input id="nAd"></div>
+      <div><label>Tam. Camiseta</label><select id="nCam"></select></div>
+      <div><label>Tam. Calção</label><select id="nCal"></select></div>
+      <div><label>Quant.</label><input id="nQtd" type="number" min="1" value="1"></div>
+      <div><button class="ok" id="btnAdd">Adicionar</button></div>
+    </div>
+
+    <div class="scroll" style="margin-top:16px">
+      <table>
+        <thead><tr><th>Tipo</th><th>Nome</th><th>Número</th><th>Adicional</th><th>Tam. Camiseta</th><th>Tam. Calção</th><th>Quant.</th><th></th></tr></thead>
+        <tbody id="itens"></tbody>
+      </table>
+    </div>
+    <div style="margin-top:12px" class="summary" id="resumo"></div>
+  </div>
+
+  <div class="card" style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+    <span class="muted">As informações enviadas serão usadas fielmente na produção das peças. Confira antes de enviar.</span>
+    <button class="ok" id="btnEnviar" style="padding:12px 22px">Enviar pedido</button>
+  </div>
+  <div class="foot"><span id="rodape"></span><br><span style="display:inline-flex;align-items:center;gap:6px;margin-top:8px"><img src="yuno.png" alt="" width="18" height="18" style="border-radius:5px"> feito com <b>YUNO</b></span></div>
+</main>
+
+<script src="config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script>
+(function(){
+  const C = window.YUNO_CONFIG || {};
+  const $ = id => document.getElementById(id);
+  const pedidoId = new URLSearchParams(location.search).get("p");
+  let itens = [];
+  let bloqueado = false;
+
+  $("empresa").textContent = C.empresa || "Pedido";
+  $("rodape").textContent = (C.empresa || "") + " · formulário de pedido";
+  document.title = "Pedido · " + (C.empresa || "");
+
+  function opts(sel, lista, vazio){
+    sel.innerHTML = (vazio ? `<option value="">${vazio}</option>` : "") +
+      lista.map(v => `<option>${esc(v)}</option>`).join("");
+  }
+  function esc(s){ return String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+  function msg(texto, tipo){ const m=$("msg"); m.textContent=texto; m.className="msg show "+(tipo||"ok"); m.scrollIntoView({behavior:"smooth",block:"nearest"}); }
+  function normTam(t){ return String(t ?? "").replace(/[\s\/\\]/g,"").toUpperCase(); }
+
+  opts($("nTipo"), C.tipos || ["1 - Linha"]);
+  opts($("nCam"), C.tamanhos || [], "Selecione");
+  opts($("nCal"), C.tamanhos || [], "Selecione");
+
+  async function rpc(fn, body){
+    const headers = { "Content-Type":"application/json", "apikey": C.supabaseKey };
+    if (!String(C.supabaseKey).startsWith("sb_")) headers["Authorization"] = "Bearer " + C.supabaseKey;
+    const r = await fetch(C.supabaseUrl.replace(/\/$/,"") + "/rest/v1/rpc/" + fn, { method:"POST", headers, body: JSON.stringify(body) });
+    const txt = await r.text();
+    let data = null; try { data = txt ? JSON.parse(txt) : null; } catch(e) {}
+    if (!r.ok) throw new Error((data && (data.message || data.hint)) || ("Erro " + r.status));
+    return data;
+  }
+
+  function render(){
+    const tb = $("itens");
+    tb.innerHTML = itens.map((it,i) => `
+      <tr>
+        <td><select data-i="${i}" data-k="tipo">${(C.tipos||[]).map(t=>`<option ${t===it.tipo?"selected":""}>${esc(t)}</option>`).join("")}${(C.tipos||[]).includes(it.tipo)||!it.tipo?"":`<option selected>${esc(it.tipo)}</option>`}</select></td>
+        <td><input data-i="${i}" data-k="nome" value="${esc(it.nome)}"></td>
+        <td style="width:80px"><input data-i="${i}" data-k="numero" value="${esc(it.numero)}"></td>
+        <td><input data-i="${i}" data-k="adicional" value="${esc(it.adicional)}"></td>
+        <td style="width:100px"><select data-i="${i}" data-k="tam_camiseta"><option value=""></option>${(C.tamanhos||[]).map(t=>`<option ${t===it.tam_camiseta?"selected":""}>${t}</option>`).join("")}</select></td>
+        <td style="width:100px"><select data-i="${i}" data-k="tam_calcao"><option value=""></option>${(C.tamanhos||[]).map(t=>`<option ${t===it.tam_calcao?"selected":""}>${t}</option>`).join("")}</select></td>
+        <td style="width:80px"><input data-i="${i}" data-k="quantidade" type="number" min="1" value="${it.quantidade}"></td>
+        <td><button class="danger" data-del="${i}" ${bloqueado?"disabled":""}>Remover</button></td>
+      </tr>`).join("") || `<tr><td colspan="8" class="muted" style="padding:14px 6px">Nenhum item ainda.</td></tr>`;
+    tb.querySelectorAll("input,select").forEach(el => {
+      el.disabled = bloqueado;
+      el.addEventListener("change", e => {
+        const it = itens[+e.target.dataset.i], k = e.target.dataset.k;
+        it[k] = k === "quantidade" ? Math.max(1, parseInt(e.target.value)||1) : e.target.value;
+        resumo();
+      });
+    });
+    tb.querySelectorAll("[data-del]").forEach(b => b.addEventListener("click", e => { itens.splice(+e.target.dataset.del,1); render(); }));
+    resumo();
+  }
+
+  function resumo(){
+    const soma = k => { const m={}; itens.forEach(it => { if(it[k]) m[it[k]]=(m[it[k]]||0)+(+it.quantidade||1); }); return m; };
+    const fmt = m => Object.keys(m).sort((a,b)=>(C.tamanhos||[]).indexOf(a)-(C.tamanhos||[]).indexOf(b)).map(t=>`<span class="chip">${esc(t)} = ${m[t]}</span>`).join("") || "—";
+    const total = itens.reduce((s,it)=>s+(it.tam_camiseta?(+it.quantidade||1):0)+(it.tam_calcao?(+it.quantidade||1):0),0);
+    $("resumo").innerHTML = `<div><b>Total de peças:</b> ${total}</div><div><b>Camisetas:</b> ${fmt(soma("tam_camiseta"))}</div><div><b>Calções:</b> ${fmt(soma("tam_calcao"))}</div>`;
+  }
+
+  $("btnAdd").addEventListener("click", () => {
+    const it = { tipo:$("nTipo").value, nome:$("nNome").value.trim(), numero:$("nNum").value.trim(), adicional:$("nAd").value.trim(),
+                 tam_camiseta:$("nCam").value, tam_calcao:$("nCal").value, quantidade:Math.max(1, parseInt($("nQtd").value)||1) };
+    if (!it.tam_camiseta && !it.tam_calcao) { msg("Escolha o tamanho da camiseta e/ou do calção.", "warn"); return; }
+    itens.push(it);
+    $("nNome").value=""; $("nNum").value=""; $("nAd").value=""; $("nQtd").value=1; $("nNome").focus();
+    render();
+  });
+
+  $("btnModelo").addEventListener("click", () => {
+    const csv = "﻿Tipo;Nome;Número;Adicional;Tam. Camiseta;Tam. Calção;Quantidade\r\n1 - Linha;JOÃO;10;;M;M;1\r\n";
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([csv], {type:"text/csv"}));
+    a.download = "modelo_pedido.csv"; a.click();
+  });
+
+  $("btnImportar").addEventListener("click", async () => {
+    const f = $("arquivo").files[0];
+    if (!f) { msg("Escolha o arquivo da planilha.", "warn"); return; }
+    try {
+      const buf = await f.arrayBuffer();
+      const wb = XLSX.read(buf, {type:"array"});
+      const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {header:1, raw:false, defval:""});
+      if (!rows.length) throw new Error("Planilha vazia.");
+      const plain = s => String(s).normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase();
+      const h = rows[0].map(plain);
+      const col = (...keys) => h.findIndex(x => keys.some(k => x.includes(k)));
+      const c = { tipo:col("tipo"), nome:col("nome"), numero:col("numero","num","nº"), adicional:col("adic"),
+                  cam:col("camis"), cal:col("calc"), qtd:col("quant","qtd") };
+      let n = 0;
+      rows.slice(1).forEach(r => {
+        const g = i => i >= 0 ? String(r[i] ?? "").trim() : "";
+        const it = { tipo:g(c.tipo) || (C.tipos||[""])[0], nome:g(c.nome), numero:g(c.numero), adicional:g(c.adicional),
+                     tam_camiseta:normTam(g(c.cam)), tam_calcao:normTam(g(c.cal)), quantidade:Math.max(1, parseInt(g(c.qtd))||1) };
+        if (it.tam_camiseta || it.tam_calcao) { itens.push(it); n++; }
+      });
+      render();
+      msg(`${n} item(ns) importado(s). Confira e clique em Enviar pedido.`, "ok");
+    } catch(e) { msg("Não foi possível ler a planilha: " + e.message, "err"); }
+  });
+
+  $("btnEnviar").addEventListener("click", async () => {
+    if (!$("cNome").value.trim()) { msg("Informe o nome completo.", "warn"); $("cNome").focus(); return; }
+    if (!itens.length) { msg("Adicione pelo menos um item.", "warn"); return; }
+    const btn = $("btnEnviar"); btn.disabled = true; btn.textContent = "Enviando…";
+    try {
+      await rpc("enviar_pedido", { p_id: pedidoId,
+        p_cliente: { nome:$("cNome").value, telefone:$("cTel").value, email:$("cEmail").value },
+        p_itens: itens.map(it => ({...it, tam_camiseta:normTam(it.tam_camiseta), tam_calcao:normTam(it.tam_calcao)})) });
+      $("status").textContent = "enviado";
+      msg("Pedido enviado! Você pode voltar a este link para corrigir enquanto ele não for encerrado.", "ok");
+    } catch(e) { msg(e.message, "err"); }
+    finally { btn.disabled = bloqueado; btn.textContent = "Enviar pedido"; }
+  });
+
+  async function carregar(){
+    if (!pedidoId) { $("status").textContent = "sem pedido"; msg("Link inválido: falta o código do pedido.", "err"); bloqueado = true; render(); return; }
+    if (!C.supabaseUrl || C.supabaseUrl.includes("SEU-PROJETO")) { msg("Formulário ainda não configurado (config.js).", "err"); return; }
+    try {
+      const p = await rpc("ver_pedido", { p_id: pedidoId });
+      if (!p) throw new Error("Pedido não encontrado.");
+      $("referencia").textContent = p.referencia;
+      $("status").textContent = p.status;
+      $("cNome").value = p.cliente_nome || ""; $("cTel").value = p.cliente_telefone || ""; $("cEmail").value = p.cliente_email || "";
+      itens = (p.itens || []).map(it => ({...it, quantidade: it.quantidade || 1}));
+      if (p.status === "encerrado") {
+        bloqueado = true; $("btnEnviar").disabled = true; $("btnAdd").disabled = true; $("btnImportar").disabled = true;
+        msg("Este pedido já foi encerrado e não pode mais ser alterado.", "warn");
+      }
+      render();
+    } catch(e) { $("status").textContent = "erro"; msg(e.message, "err"); }
+  }
+  render();
+  carregar();
+})();
+</script>
+</body>
+</html>
