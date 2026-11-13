@@ -20,7 +20,7 @@ SVG_DO_BOTAO = {
     "exportar": "file-export",    # Exportar -> arquivo saindo
     "config": "settings",         # Configurações -> engrenagem
 }
-COR_ICONE = "#22B06A"             # verde YUNO com contraste em tema claro e escuro
+COR_ICONE = "#63F5A6"             # alto contraste sobre o fundo preto opaco
 
 def icone_svg(chave, t):
     import resvg_py
@@ -28,13 +28,25 @@ def icone_svg(chave, t):
         svg = f.read().replace("currentColor", COR_ICONE)
     # traço um pouco mais grosso nos tamanhos pequenos para ficar nítido
     if t <= 20: svg = svg.replace('stroke-width="2"', 'stroke-width="2.2"')
-    png = resvg_py.svg_to_bytes(svg_string=svg, width=t, height=t)
-    return Image.open(io.BytesIO(bytes(png))).convert("RGBA")
+    # Render the vector at each native toolbar size. Opaque black avoids white
+    # transparency fallback in older Corel resource renderers.
+    inset = max(1, round(t * 0.08))
+    png = resvg_py.svg_to_bytes(svg_string=svg, width=t - 2 * inset, height=t - 2 * inset)
+    glyph = Image.open(io.BytesIO(bytes(png))).convert("RGBA")
+    canvas = Image.new("RGBA", (t, t), (0, 0, 0, 255))
+    canvas.alpha_composite(glyph, (inset, inset))
+    return canvas
 
 def icone_tam(chave, t):
     if chave in SVG_DO_BOTAO:
         return icone_svg(chave, t)
-    return icone(chave).resize((t, t), Image.LANCZOS)
+    # A simple Y mark remains legible at 16 px, unlike a reduced app tile.
+    canvas = Image.new("RGBA", (t * 4, t * 4), (0, 0, 0, 255))
+    d = ImageDraw.Draw(canvas)
+    k = t * 4
+    d.line([(k*.25,k*.27),(k*.5,k*.51),(k*.75,k*.27)], fill=COR_ICONE, width=max(4,round(k*.12)), joint="curve")
+    d.line([(k*.5,k*.49),(k*.5,k*.78)], fill=COR_ICONE, width=max(4,round(k*.12)))
+    return canvas.resize((t, t), Image.LANCZOS)
 
 AQUI = os.path.dirname(os.path.abspath(__file__))
 ADDON = os.path.normpath(os.path.join(AQUI, "..", "src", "Yuno", "Addon"))
@@ -50,14 +62,10 @@ RES_NAME = gid("resources")
 
 # (chave, legenda/tooltip, classe do painel)
 BOTOES = [
-    ("inicio",      "YUNO",                 "Yuno.UI.MainDocker"),
-    ("definir",     "Definir tamanhos",     "Yuno.UI.PainelDefinir"),
-    ("aplicar",     "Aplicar matrizes",     "Yuno.UI.PainelAplicar"),
-    ("montar",      "Montar pedido",        "Yuno.UI.PainelPedido"),
-    ("ferramentas", "Ferramentas",          "Yuno.UI.PainelFerramentas"),
-    ("encaixe",     "Encaixe sobre outro",  "Yuno.UI.PainelEncaixe"),
-    ("exportar",    "Exportar",             "Yuno.UI.PainelExportar"),
-    ("config",      "Configurações",        "Yuno.UI.PainelConfig"),
+    ("definir",     "Montagem",       "Yuno.UI.PainelDefinir"),
+    ("montar",      "Pedido",         "Yuno.UI.PainelPedido"),
+    ("config",      "OS",              "Yuno.UI.PainelOS"),
+    ("exportar",    "Exportar 50%",   "Yuno.UI.PainelExportar"),
 ]
 
 AZUL = (46, 204, 113, 255)      # verde YUNO (cor principal)
@@ -156,7 +164,7 @@ def string_table(strings):  # {id: text}
         res.append((b, data))
     return res
 
-TAMANHOS = [16, 20, 24, 32, 40, 48]
+TAMANHOS = [16, 20, 24, 32, 40, 48, 64]
 partes = [struct.pack("<IIHHHH", 0, 32, 0xFFFF, 0, 0xFFFF, 0) + bytes(16)]  # cabeçalho vazio obrigatório do .res
 icon_id = 1
 strings = {}
@@ -212,10 +220,11 @@ DOCKHOST_STATE = ("uiConfig/states/state[1]/container[@guidRef='bee85f91-3ad9-dc
 itens, dockers, barra = [], [], []
 for chave, legenda, classe in BOTOES:
     b, h, dk = gid("btn-" + chave), gid("host-" + chave), gid("docker-" + chave)
+    icone_docker = f' icon="guid://{b}"' if chave == "inicio" else ""
     itens.append(f'''      <itemData guid="{b}" type="checkButton" check="*Docker('{dk}')"
                 userCaption="{legenda}" icon="guid://{b}" enable="true" />
       <itemData guid="{h}" type="wpfhost" hostedType="Addons\\Yuno\\Yuno.dll,{classe}" width="330" enable="true" />''')
-    dockers.append(f'''      <dockerData guid="{dk}" userCaption="{legenda}" wantReturn="true" focusStyle="noThrow">
+    dockers.append(f'''      <dockerData guid="{dk}" userCaption="{legenda}" wantReturn="true"{icone_docker} focusStyle="noThrow">
         <container><item dock="fill" margin="0,0,0,0" guidRef="{h}" /></container>
       </dockerData>''')
     barra.append(f'          <item guidRef="{b}" dock="top"/>')
@@ -266,7 +275,7 @@ app_ui = f'''<?xml version="1.0"?>
   <xsl:template match="uiConfig/dockers">
     <xsl:copy>
       <xsl:apply-templates select="node()|@*"/>
-      <dockerData guid="{MAIN_DOCKER}" userCaption="YUNO" wantReturn="true" focusStyle="noThrow">
+      <dockerData guid="{MAIN_DOCKER}" userCaption="YUNO" wantReturn="true" icon="guid://{gid('btn-inicio')}" focusStyle="noThrow">
         <container><item dock="fill" margin="0,0,0,0" guidRef="{MAIN_HOST}" /></container>
       </dockerData>
 {chr(10).join(dockers)}

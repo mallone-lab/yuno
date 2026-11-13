@@ -4,13 +4,14 @@
     <OutputType>WinExe</OutputType>
     <TargetFramework>net48</TargetFramework>
     <UseWPF>true</UseWPF>
-    <PlatformTarget>AnyCPU</PlatformTarget>
+    <PlatformTarget>x64</PlatformTarget>
     <LangVersion>latest</LangVersion>
     <AssemblyName>YunoSetup</AssemblyName>
     <RootNamespace>YunoSetup</RootNamespace>
     <ApplicationIcon>..\..\src\Yuno\UI\Assets\yuno.ico</ApplicationIcon>
     <ApplicationManifest>app.manifest</ApplicationManifest>
-    <Version>1.1.0</Version>
+    <Version>1.3.0</Version>
+    <PayloadRoot Condition="'$(PayloadRoot)'==''">..\..\dist</PayloadRoot>
     <Product>YUNO</Product>
     <Company>YUNO</Company>
     <Description>Instalador do YUNO para CorelDRAW</Description>
@@ -18,8 +19,9 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="Welcome.html" LogicalName="Yuno.Welcome.html" />
     <!-- arquivos do add-on vão DENTRO do .exe -->
-    <EmbeddedResource Include="..\..\dist\*" LogicalName="payload/%(Filename)%(Extension)" />
+    <EmbeddedResource Include="$(PayloadRoot)\**\*" LogicalName="payload/$([System.String]::Copy('%(RecursiveDir)').Replace('\', '/'))%(Filename)%(Extension)" />
     <Resource Include="..\..\src\Yuno\UI\Assets\yuno-icone.png" Link="yuno-icone.png" />
     <Reference Include="System.IO.Compression" />
     <Reference Include="System.IO.Compression.FileSystem" />

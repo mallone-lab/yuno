@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Json;
 using System.Text;
@@ -27,19 +28,21 @@ namespace Yuno.Engine
             "2A","4A","6A","8A","10A","12A","14A","G1","G2","G3","G4",
             "ESP5","ESP6","ESP7","ESP8","ESP9","ESP10"
         };
+        [DataMember] public List<string> TiposJogador { get; set; } = new List<string> { "1 - Linha", "2 - Goleiro", "3 - Staff" };
+        [DataMember] public List<string> ModelosCalcao { get; set; } = new List<string> { "4 Partes", "2 Partes", "Personalizado", "Não informado" };
+        [DataMember] public List<string> OpcoesBolsoCalcao { get; set; } = new List<string>
+        {
+            "Sem bolso", "CALÇÃO COMISSÃO - BOLSO", "CALÇÃO LINHA - BOLSO", "CALÇÃO GOLEIRO - BOLSO",
+            "Bolso lateral", "Bolso traseiro", "Personalizado", "Não informado"
+        };
         [DataMember] public bool CriarRotulo { get; set; } = false;
         [DataMember] public bool SubstituirAoAplicar { get; set; } = true;
 
         [DataMember] public int PartesPorPeca { get; set; } = 5;
 
-        // ---- Pedidos online (Supabase)
-        [DataMember] public string SupabaseUrl { get; set; } = "";
-        [DataMember] public string SupabaseChave { get; set; } = "";   // chave secreta (service_role / sb_secret_...)
-        [DataMember] public string LinkFormulario { get; set; } = "";  // endereço público do formulário (index.html)
-
-        // ---- Planilha (letras de coluna) — mesmo modelo do formulário de pedido:
+        // ---- Planilha (letras de coluna):
         //      A Tipo | B Nome | C Número | D Adicional | E Tam. Camiseta | F Tam. Calção | G Quantidade
-        [DataMember] public int ConfigVersao { get; set; } = 3;
+        [DataMember] public int ConfigVersao { get; set; } = 4;
         [DataMember] public string ColunaTipo { get; set; } = "A";
         [DataMember] public string ColunaNome { get; set; } = "B";
         [DataMember] public string ColunaNumero { get; set; } = "C";
@@ -59,10 +62,12 @@ namespace Yuno.Engine
         [DataMember] public bool AjustarAoGabarito { get; set; } = false;
         [DataMember] public double MargemTextoPct { get; set; } = 12; // folga total (esq.+dir.) entre o texto e a borda da peça // true: aumenta/reduz para preencher a área
         [DataMember] public ArtScale EscalaArte { get; set; } = ArtScale.Esticar;
-        [DataMember] public double Espacamento { get; set; } = 1.5;
+        [DataMember] public double Espacamento { get; set; } = 1.0;
         [DataMember] public bool GerarIndicador { get; set; } = true;
         [DataMember] public float FonteIndicador { get; set; } = 36;
         [DataMember] public bool AgruparLinha { get; set; } = false;
+        [DataMember] public bool SepararTamanhosEmPaginas { get; set; } = false;
+        [DataMember] public double AlturaMaximaMontagem { get; set; } = 0; // 0 = altura da página atual
         [DataMember] public bool PreencherBrancoSemCor { get; set; } = true;
 
         // ---- ID impresso na peça
@@ -89,6 +94,7 @@ namespace Yuno.Engine
         // ---- Exportação
         [DataMember] public string PastaExportacao { get; set; } = @"C:\Export";
         [DataMember] public string PastaRelatorio { get; set; } = @"C:\Export";
+        [DataMember] public string PastaPedidosLocais { get; set; } = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Yuno", "Pedidos");
         [DataMember] public string Formato { get; set; } = "JPG"; // JPG, PNG, TIF, PDF
         [DataMember] public string Cor { get; set; } = "CMYK";
         [DataMember] public int Dpi { get; set; } = 150;
@@ -158,9 +164,21 @@ namespace Yuno.Engine
                 LarguraNomePct = 90; LarguraNumeroPct = 90; LarguraAdicionalPct = 90;
                 ConfigVersao = 3;
             }
+            if (ConfigVersao < 4)
+            {
+                Espacamento = 1.0;
+                ConfigVersao = 4;
+            }
             if (PartesPorPeca < 1) PartesPorPeca = 5;
             if (MargemTextoPct <= 0 || MargemTextoPct >= 80) MargemTextoPct = 12;
             if (Tamanhos == null || Tamanhos.Count == 0) Tamanhos = d.Tamanhos;
+            if (TiposJogador == null || TiposJogador.Count == 0) TiposJogador = d.TiposJogador;
+            if (ModelosCalcao == null || ModelosCalcao.Count == 0) ModelosCalcao = d.ModelosCalcao;
+            if (OpcoesBolsoCalcao == null || OpcoesBolsoCalcao.Count == 0) OpcoesBolsoCalcao = d.OpcoesBolsoCalcao;
+            foreach (var opcao in d.ModelosCalcao.Where(x => string.Equals(x, "4 partes", StringComparison.OrdinalIgnoreCase)))
+                if (!ModelosCalcao.Any(x => string.Equals(x, opcao, StringComparison.OrdinalIgnoreCase))) ModelosCalcao.Insert(0, opcao);
+            foreach (var opcao in d.OpcoesBolsoCalcao)
+                if (!OpcoesBolsoCalcao.Any(x => string.Equals(x, opcao, StringComparison.OrdinalIgnoreCase))) OpcoesBolsoCalcao.Add(opcao);
             if (Tecidos == null || Tecidos.Count == 0) Tecidos = d.Tecidos;
             if (string.IsNullOrWhiteSpace(FonteIdNome)) FonteIdNome = d.FonteIdNome;
             if (FonteId <= 0) FonteId = d.FonteId;
@@ -169,6 +187,7 @@ namespace Yuno.Engine
             if (string.IsNullOrWhiteSpace(Formato)) Formato = d.Formato;
             if (string.IsNullOrWhiteSpace(Cor)) Cor = d.Cor;
             if (string.IsNullOrWhiteSpace(CompressaoPdf)) CompressaoPdf = d.CompressaoPdf;
+            if (string.IsNullOrWhiteSpace(PastaPedidosLocais)) PastaPedidosLocais = d.PastaPedidosLocais;
         }
     }
 }

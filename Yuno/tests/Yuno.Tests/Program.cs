@@ -41,7 +41,10 @@ namespace Yuno.Tests
             bool wasRunning = Process.GetProcessesByName("CorelDRW").Length > 0;
 
             Console.WriteLine("Conectando ao CorelDRAW...");
-            app = (Application)Activator.CreateInstance(Type.GetTypeFromProgID("CorelDRAW.Application.27"));
+            var progId = args.Length > 1 ? args[1] : "CorelDRAW.Application.27";
+            var hostType = Type.GetTypeFromProgID(progId);
+            if (hostType == null) throw new InvalidOperationException("CorelDRAW não registrado: " + progId);
+            app = (Application)Activator.CreateInstance(hostType);
             app.Visible = true;
             Document doc = null;
             var sw = Stopwatch.StartNew();

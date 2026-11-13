@@ -3,6 +3,80 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              ShutdownMode="OnMainWindowClose">
   <Application.Resources>
+    <Style x:Key="SerialField" TargetType="PasswordBox">
+      <Setter Property="Foreground" Value="#FFF2F3F5"/>
+      <Setter Property="Background" Value="#FF191B1E"/>
+      <Setter Property="CaretBrush" Value="#FF4ADE80"/>
+      <Setter Property="FontFamily" Value="Consolas"/>
+      <Setter Property="FontSize" Value="15"/>
+      <Setter Property="Padding" Value="12,11"/>
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="PasswordBox">
+            <Border x:Name="FieldBorder" CornerRadius="8" Background="{TemplateBinding Background}" BorderBrush="#FF4A4D53" BorderThickness="1" Padding="{TemplateBinding Padding}">
+              <ScrollViewer x:Name="PART_ContentHost"/>
+            </Border>
+            <ControlTemplate.Triggers>
+              <Trigger Property="IsKeyboardFocusWithin" Value="True"><Setter TargetName="FieldBorder" Property="BorderBrush" Value="#FF4ADE80"/></Trigger>
+              <Trigger Property="IsEnabled" Value="False"><Setter TargetName="FieldBorder" Property="Opacity" Value="0.5"/></Trigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+    <Style x:Key="CorelSelect" TargetType="ComboBox">
+      <Setter Property="Foreground" Value="#FFF2F3F5"/>
+      <Setter Property="Background" Value="#FF191B1E"/>
+      <Setter Property="FontSize" Value="13"/>
+      <Setter Property="MinHeight" Value="44"/>
+      <Setter Property="ItemContainerStyle">
+        <Setter.Value>
+          <Style TargetType="ComboBoxItem">
+            <Setter Property="Foreground" Value="#FFF2F3F5"/>
+            <Setter Property="Padding" Value="12,10"/>
+            <Setter Property="Template">
+              <Setter.Value>
+                <ControlTemplate TargetType="ComboBoxItem">
+                  <Border x:Name="ItemBorder" Background="Transparent" Padding="{TemplateBinding Padding}"><ContentPresenter/></Border>
+                  <ControlTemplate.Triggers>
+                    <Trigger Property="IsHighlighted" Value="True"><Setter TargetName="ItemBorder" Property="Background" Value="#FF24563D"/></Trigger>
+                    <Trigger Property="IsSelected" Value="True"><Setter TargetName="ItemBorder" Property="Background" Value="#FF24563D"/></Trigger>
+                  </ControlTemplate.Triggers>
+                </ControlTemplate>
+              </Setter.Value>
+            </Setter>
+          </Style>
+        </Setter.Value>
+      </Setter>
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="ComboBox">
+            <Grid>
+              <ToggleButton Focusable="False" IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}">
+                <ToggleButton.Template>
+                  <ControlTemplate TargetType="ToggleButton">
+                    <Border x:Name="SelectBorder" Background="#FF191B1E" BorderBrush="#FF4A4D53" BorderThickness="1" CornerRadius="8">
+                      <TextBlock Text="⌄" Foreground="#FF4ADE80" FontSize="20" Margin="0,0,12,3" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                      <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="SelectBorder" Property="BorderBrush" Value="#FF4ADE80"/></Trigger>
+                      <Trigger Property="IsChecked" Value="True"><Setter TargetName="SelectBorder" Property="BorderBrush" Value="#FF4ADE80"/></Trigger>
+                    </ControlTemplate.Triggers>
+                  </ControlTemplate>
+                </ToggleButton.Template>
+              </ToggleButton>
+              <ContentPresenter Content="{TemplateBinding SelectionBoxItem}" ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}" Margin="12,8,35,8" VerticalAlignment="Center" IsHitTestVisible="False"/>
+              <Popup x:Name="PART_Popup" IsOpen="{TemplateBinding IsDropDownOpen}" Placement="Bottom" AllowsTransparency="True" Focusable="False">
+                <Border Background="#FF191B1E" BorderBrush="#FF4A4D53" BorderThickness="1" CornerRadius="8" Padding="4" MinWidth="{Binding ActualWidth, RelativeSource={RelativeSource TemplatedParent}}" Margin="0,4,0,0">
+                  <ScrollViewer MaxHeight="220"><ItemsPresenter KeyboardNavigation.DirectionalNavigation="Contained"/></ScrollViewer>
+                </Border>
+              </Popup>
+            </Grid>
+            <ControlTemplate.Triggers><Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.5"/></Trigger></ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
     <SolidColorBrush x:Key="Bg" Color="#FF1E1F21"/>
     <SolidColorBrush x:Key="Card" Color="#FF2A2B2E"/>
     <SolidColorBrush x:Key="Line" Color="#FF3A3C40"/>

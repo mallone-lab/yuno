@@ -22,13 +22,13 @@
                 userCaption="YUNO" icon="guid://ad785f27-9ec3-56e1-a6bd-c6143743e8ca" enable="true" />
       <itemData guid="eb980a26-1643-532d-87ae-348d2122da13" type="wpfhost" hostedType="Addons\Yuno\Yuno.dll,Yuno.UI.MainDocker" width="330" enable="true" />
       <itemData guid="291c9529-5e82-551e-be03-665a3d975188" type="checkButton" check="*Docker('d42ad130-bfe3-5425-a89c-8eb049c96e6c')"
-                userCaption="Definir tamanhos" icon="guid://291c9529-5e82-551e-be03-665a3d975188" enable="true" />
+                userCaption="Montagem" icon="guid://291c9529-5e82-551e-be03-665a3d975188" enable="true" />
       <itemData guid="3ec7d18d-c82f-5757-8ab0-f062261c9ecb" type="wpfhost" hostedType="Addons\Yuno\Yuno.dll,Yuno.UI.PainelDefinir" width="330" enable="true" />
       <itemData guid="22eb749a-cfbe-5c5a-86b5-544d21153074" type="checkButton" check="*Docker('02edb4fb-53e0-5dc4-aef8-366e55479653')"
                 userCaption="Aplicar matrizes" icon="guid://22eb749a-cfbe-5c5a-86b5-544d21153074" enable="true" />
       <itemData guid="dc6902fe-56d4-5c99-bd7c-4a87aac1df96" type="wpfhost" hostedType="Addons\Yuno\Yuno.dll,Yuno.UI.PainelAplicar" width="330" enable="true" />
       <itemData guid="b2b8caaa-61b5-5fdc-b34c-bb0113cb6cfb" type="checkButton" check="*Docker('ae35b949-ced2-5ac3-ac17-2e2801a0f9e1')"
-                userCaption="Montar pedido" icon="guid://b2b8caaa-61b5-5fdc-b34c-bb0113cb6cfb" enable="true" />
+                userCaption="Pedido" icon="guid://b2b8caaa-61b5-5fdc-b34c-bb0113cb6cfb" enable="true" />
       <itemData guid="6a053b18-ed9a-5288-b936-a8da2f4f7e3a" type="wpfhost" hostedType="Addons\Yuno\Yuno.dll,Yuno.UI.PainelPedido" width="330" enable="true" />
       <itemData guid="cf1e9ff1-df68-529e-a715-feda7cc9761e" type="checkButton" check="*Docker('700ff718-0858-5b4c-b5ba-9922ff67be8b')"
                 userCaption="Ferramentas" icon="guid://cf1e9ff1-df68-529e-a715-feda7cc9761e" enable="true" />
@@ -37,11 +37,11 @@
                 userCaption="Encaixe sobre outro" icon="guid://4300c56a-4818-5b2c-920c-54c25d35485e" enable="true" />
       <itemData guid="d8186a85-515c-5b74-8cdc-316be6c86941" type="wpfhost" hostedType="Addons\Yuno\Yuno.dll,Yuno.UI.PainelEncaixe" width="330" enable="true" />
       <itemData guid="f806f856-9c20-5867-99f4-bb53ff190a28" type="checkButton" check="*Docker('dfa57b98-d259-5419-aea5-18bbafb5cc91')"
-                userCaption="Exportar" icon="guid://f806f856-9c20-5867-99f4-bb53ff190a28" enable="true" />
+                userCaption="Exportar 50%" icon="guid://f806f856-9c20-5867-99f4-bb53ff190a28" enable="true" />
       <itemData guid="ef0aa7b8-8039-542f-9cfa-ade2a669f2f0" type="wpfhost" hostedType="Addons\Yuno\Yuno.dll,Yuno.UI.PainelExportar" width="330" enable="true" />
       <itemData guid="17d935f6-a152-5006-918d-cbc83d36961c" type="checkButton" check="*Docker('f8340c7e-e692-55aa-9477-1d93603b9a90')"
-                userCaption="Configurações" icon="guid://17d935f6-a152-5006-918d-cbc83d36961c" enable="true" />
-      <itemData guid="4854119d-129d-5b74-97a7-f13ed09ae755" type="wpfhost" hostedType="Addons\Yuno\Yuno.dll,Yuno.UI.PainelConfig" width="330" enable="true" />
+                userCaption="OS" icon="guid://17d935f6-a152-5006-918d-cbc83d36961c" enable="true" />
+      <itemData guid="4854119d-129d-5b74-97a7-f13ed09ae755" type="wpfhost" hostedType="Addons\Yuno\Yuno.dll,Yuno.UI.PainelOS" width="330" enable="true" />
     </xsl:copy>
   </xsl:template>
 
@@ -51,14 +51,10 @@
       <commandBarData guid="09ba2112-3fa1-4178-96e7-d230c33692f3" type="menu" nonLocalizableName="YUNO" flyout="true"><menu /></commandBarData>
       <commandBarData guid="9992b30a-3266-5e32-88f5-5ca096b24bbd" nonLocalizableName="YUNO" userCaption="YUNO" type="toolbar">
         <toolbar>
-          <item guidRef="ad785f27-9ec3-56e1-a6bd-c6143743e8ca" dock="top"/>
           <item guidRef="291c9529-5e82-551e-be03-665a3d975188" dock="top"/>
-          <item guidRef="22eb749a-cfbe-5c5a-86b5-544d21153074" dock="top"/>
           <item guidRef="b2b8caaa-61b5-5fdc-b34c-bb0113cb6cfb" dock="top"/>
-          <item guidRef="cf1e9ff1-df68-529e-a715-feda7cc9761e" dock="top"/>
-          <item guidRef="4300c56a-4818-5b2c-920c-54c25d35485e" dock="top"/>
-          <item guidRef="f806f856-9c20-5867-99f4-bb53ff190a28" dock="top"/>
           <item guidRef="17d935f6-a152-5006-918d-cbc83d36961c" dock="top"/>
+          <item guidRef="f806f856-9c20-5867-99f4-bb53ff190a28" dock="top"/>
         </toolbar>
       </commandBarData>
     </xsl:copy>
@@ -74,19 +70,19 @@
   <xsl:template match="uiConfig/dockers">
     <xsl:copy>
       <xsl:apply-templates select="node()|@*"/>
-      <dockerData guid="74ca6974-78e4-49ab-af1f-4804be8afc9f" userCaption="YUNO" wantReturn="true" focusStyle="noThrow">
+      <dockerData guid="74ca6974-78e4-49ab-af1f-4804be8afc9f" userCaption="YUNO" wantReturn="true" icon="guid://ad785f27-9ec3-56e1-a6bd-c6143743e8ca" focusStyle="noThrow">
         <container><item dock="fill" margin="0,0,0,0" guidRef="fbe1a850-6bbc-47e4-a3fe-2bdffbc6f723" /></container>
       </dockerData>
-      <dockerData guid="9e6dd6e7-adce-5e08-8b91-c4f96dcead4e" userCaption="YUNO" wantReturn="true" focusStyle="noThrow">
+      <dockerData guid="9e6dd6e7-adce-5e08-8b91-c4f96dcead4e" userCaption="YUNO" wantReturn="true" icon="guid://ad785f27-9ec3-56e1-a6bd-c6143743e8ca" focusStyle="noThrow">
         <container><item dock="fill" margin="0,0,0,0" guidRef="eb980a26-1643-532d-87ae-348d2122da13" /></container>
       </dockerData>
-      <dockerData guid="d42ad130-bfe3-5425-a89c-8eb049c96e6c" userCaption="Definir tamanhos" wantReturn="true" focusStyle="noThrow">
+      <dockerData guid="d42ad130-bfe3-5425-a89c-8eb049c96e6c" userCaption="Montagem" wantReturn="true" focusStyle="noThrow">
         <container><item dock="fill" margin="0,0,0,0" guidRef="3ec7d18d-c82f-5757-8ab0-f062261c9ecb" /></container>
       </dockerData>
       <dockerData guid="02edb4fb-53e0-5dc4-aef8-366e55479653" userCaption="Aplicar matrizes" wantReturn="true" focusStyle="noThrow">
         <container><item dock="fill" margin="0,0,0,0" guidRef="dc6902fe-56d4-5c99-bd7c-4a87aac1df96" /></container>
       </dockerData>
-      <dockerData guid="ae35b949-ced2-5ac3-ac17-2e2801a0f9e1" userCaption="Montar pedido" wantReturn="true" focusStyle="noThrow">
+      <dockerData guid="ae35b949-ced2-5ac3-ac17-2e2801a0f9e1" userCaption="Pedido" wantReturn="true" focusStyle="noThrow">
         <container><item dock="fill" margin="0,0,0,0" guidRef="6a053b18-ed9a-5288-b936-a8da2f4f7e3a" /></container>
       </dockerData>
       <dockerData guid="700ff718-0858-5b4c-b5ba-9922ff67be8b" userCaption="Ferramentas" wantReturn="true" focusStyle="noThrow">
@@ -95,10 +91,10 @@
       <dockerData guid="d388a882-7133-5d1c-8ebf-29dfdc2a1229" userCaption="Encaixe sobre outro" wantReturn="true" focusStyle="noThrow">
         <container><item dock="fill" margin="0,0,0,0" guidRef="d8186a85-515c-5b74-8cdc-316be6c86941" /></container>
       </dockerData>
-      <dockerData guid="dfa57b98-d259-5419-aea5-18bbafb5cc91" userCaption="Exportar" wantReturn="true" focusStyle="noThrow">
+      <dockerData guid="dfa57b98-d259-5419-aea5-18bbafb5cc91" userCaption="Exportar 50%" wantReturn="true" focusStyle="noThrow">
         <container><item dock="fill" margin="0,0,0,0" guidRef="ef0aa7b8-8039-542f-9cfa-ade2a669f2f0" /></container>
       </dockerData>
-      <dockerData guid="f8340c7e-e692-55aa-9477-1d93603b9a90" userCaption="Configurações" wantReturn="true" focusStyle="noThrow">
+      <dockerData guid="f8340c7e-e692-55aa-9477-1d93603b9a90" userCaption="OS" wantReturn="true" focusStyle="noThrow">
         <container><item dock="fill" margin="0,0,0,0" guidRef="4854119d-129d-5b74-97a7-f13ed09ae755" /></container>
       </dockerData>
     </xsl:copy>

@@ -1,5 +1,6 @@
 ﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:local="clr-namespace:Yuno.UI">
 
   <!-- Paleta escura, combinando com a interface do CorelDRAW 2026 -->
   <SolidColorBrush x:Key="Bg" Color="#FF1E1F21"/>
@@ -23,6 +24,7 @@
     <GradientStop Color="#FF13865A" Offset="1"/>
   </LinearGradientBrush>
   <SolidColorBrush x:Key="Danger" Color="#FFE5484D"/>
+  <local:HalfTabWidthConverter x:Key="HalfTabWidth"/>
 
   <Style TargetType="TextBlock">
     <Setter Property="Foreground" Value="{StaticResource Fg}"/>
@@ -275,6 +277,43 @@
         </ControlTemplate>
       </Setter.Value>
     </Setter>
+  </Style>
+  <Style x:Key="PrimaryPedidoTab" TargetType="TabItem" BasedOn="{StaticResource {x:Type TabItem}}">
+    <Setter Property="Width" Value="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType={x:Type TabControl}}, Converter={StaticResource HalfTabWidth}}"/>
+    <Setter Property="FontSize" Value="14"/><Setter Property="FontWeight" Value="Bold"/>
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="TabItem">
+          <Border x:Name="B" Margin="2,0,2,4" Padding="10,9" CornerRadius="6" Background="#FF176647" BorderBrush="#FF28A86C" BorderThickness="1" Cursor="Hand">
+            <ContentPresenter ContentSource="Header" HorizontalAlignment="Center" VerticalAlignment="Center" TextElement.FontSize="14" TextElement.FontWeight="Bold"/>
+          </Border>
+          <ControlTemplate.Triggers>
+            <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="B" Property="Background" Value="#FF21865D"/></Trigger>
+            <Trigger Property="IsSelected" Value="True"><Setter TargetName="B" Property="Background" Value="{StaticResource Brand}"/><Setter Property="Foreground" Value="White"/></Trigger>
+          </ControlTemplate.Triggers>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+  <Style x:Key="PrimaryMontarTab" TargetType="TabItem" BasedOn="{StaticResource {x:Type TabItem}}">
+    <Setter Property="Width" Value="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType={x:Type TabControl}}, Converter={StaticResource HalfTabWidth}}"/>
+    <Setter Property="FontSize" Value="14"/><Setter Property="FontWeight" Value="Bold"/>
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="TabItem">
+          <Border x:Name="B" Margin="2,0,2,4" Padding="10,9" CornerRadius="6" Background="#FF234D7E" BorderBrush="#FF397CC2" BorderThickness="1" Cursor="Hand">
+            <ContentPresenter ContentSource="Header" HorizontalAlignment="Center" VerticalAlignment="Center" TextElement.FontSize="14" TextElement.FontWeight="Bold"/>
+          </Border>
+          <ControlTemplate.Triggers>
+            <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="B" Property="Background" Value="#FF2D669F"/></Trigger>
+            <Trigger Property="IsSelected" Value="True"><Setter TargetName="B" Property="Background" Value="#FF2877C7"/><Setter Property="Foreground" Value="White"/></Trigger>
+          </ControlTemplate.Triggers>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+  <Style x:Key="PrimaryPedidoAction" TargetType="Button" BasedOn="{StaticResource Primary}">
+    <Setter Property="Background" Value="#FF176647"/><Setter Property="BorderBrush" Value="#FF28A86C"/>
   </Style>
 
   <!-- Grade do pedido -->

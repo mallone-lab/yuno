@@ -11,6 +11,15 @@ namespace Yuno.Engine
         public int Linhas;
         public List<string> Avisos = new List<string>();
         public List<Shape> Criadas = new List<Shape>();
+        internal List<AssemblyRow> Grupos = new List<AssemblyRow>();
+    }
+
+    internal sealed class AssemblyRow
+    {
+        public string Tamanho;
+        public string TipoTamanho;
+        public string Tipo;
+        public List<Shape> Shapes;
     }
 
     /// <summary>Montagem de peças: copia a arte da matriz para o molde de cada tamanho e preenche nome/número/ID.</summary>
@@ -20,13 +29,16 @@ namespace Yuno.Engine
 
         /// <param name="pedido">número/código do pedido (vai no ID)</param>
         /// <param name="preencherBranco">null = usar a configuração; true/false força</param>
-        public static AssemblyResult Montar(Application app, IList<OrderLine> linhas, string pedido, Config cfg, bool? preencherBranco = null)
+        public static AssemblyResult Montar(Application app, IList<OrderLine> linhas, string pedido, Config cfg, bool? preencherBranco = null,
+                                            IList<MoldeInfo> moldesLidos = null)
         {
             var doc = app.ActiveDocument;
             var res = new AssemblyResult();
             if (linhas == null || linhas.Count == 0) throw new UserException("A lista do pedido está vazia.");
 
-            var moldes = Moldes.FindAll(doc);
+            // Reutiliza a leitura feita no pré-voo da tela (inclusive a checagem de
+            // matriz sem cor), evitando uma segunda varredura COM do documento.
+            var moldes = moldesLidos?.ToList() ?? Moldes.FindAll(doc);
             var dups = Moldes.Duplicates(moldes);
             if (dups.Count > 0)
             {
@@ -37,18 +49,23 @@ namespace Yuno.Engine
             var matrizes = moldes.Where(m => m.IsMatriz).OrderBy(m => m.Parte).ToList();
             if (matrizes.Count == 0) throw new UserException("Nenhuma MATRIZ definida. Use \"Definir tamanhos\" para marcar a matriz de cada parte.");
             var porTam = moldes.Where(m => !m.IsMatriz).ToLookup(m => m.Tamanho);
+            var moldesPorTamanhoParte = moldes.Where(m => !m.IsMatriz)
+                .GroupBy(m => m.Tamanho + "|" + m.Parte, StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(g => g.Key, g => g.ToList(), StringComparer.OrdinalIgnoreCase);
 
             foreach (var tam in linhas.Select(l => l.Tamanho).Distinct())
                 if (!porTam.Contains(tam))
                     throw new UserException($"O tamanho \"{tam}\" não tem nenhum molde definido no documento.");
 
+            // Uma só leitura da página reduz chamadas COM durante pedidos grandes.
+            var todas = Cdr.PageShapes(doc).ToList();
+            var idsTopo = new HashSet<int>(Cdr.Items(doc.ActivePage.Shapes).Select(s => s.StaticID));
             // campos soltos (fora do PowerClip) sobre cada matriz
             var soltos = new Dictionary<int, List<Shape>>();
-            var todas = Cdr.PageShapes(doc).ToList();
-            foreach (var m in matrizes) soltos[m.Parte] = LooseFieldsOver(m.Shape, todas);
+            foreach (var m in matrizes) soltos[m.Parte] = LooseFieldsOver(m.Shape, todas, idsTopo);
 
             bool branco = preencherBranco ?? cfg.PreencherBrancoSemCor;
-            int seq = NextSeq(doc);
+            int seq = NextSeq(todas);
 
             // Layout: cada tamanho vira uma coluna EMBAIXO dos moldes daquele tamanho.
             // Cada uniforme repete a mesma disposição das partes do molde (frente, costas, mangas...),
@@ -56,7 +73,7 @@ namespace Yuno.Engine
             var layer = doc.ActiveLayer;
             var caixaTam = new Dictionary<string, Box>();
             var proxTopo = new Dictionary<string, double>();
-            var pecasExistentes = Cdr.PageShapes(doc).Where(s => Tag.KindOf(s.Name) == Tag.Peca).Select(s => new { t = Tag.Parse(s.Name)["T"], b = Cdr.BoxOf(s) }).ToList();
+            var pecasExistentes = todas.Where(s => Tag.KindOf(s.Name) == Tag.Peca).Select(s => new { t = Tag.Parse(s.Name)["T"], b = Cdr.BoxOf(s) }).ToList();
             foreach (var g in porTam)
             {
                 var box = Cdr.BoxOf(Cdr.Range(app, g.Select(m => m.Shape)));
@@ -72,66 +89,181 @@ namespace Yuno.Engine
                 var box = caixaTam[linha.Tamanho];
                 for (int k = 0; k < Math.Max(1, linha.Quantidade); k++)
                 {
+                    // Cada uniforme tem seu próprio ponto de retorno. Uma montagem
+                    // grande deixa de virar um único comando enorme no Ctrl+Z.
+                    using (new CorelCommandGroup(doc, $"YUNO: montar {linha.Tipo} {linha.Tamanho} #{seq}"))
+                    {
                     var rowShapes = new List<Shape>();
                     double rowTop = proxTopo[linha.Tamanho];
-                    double alturaInd = 0;
-                    if (cfg.GerarIndicador)
-                    {
-                        var ind = Cdr.CreateText(app, layer, IndicatorText(linha, seq), "Arial", cfg.FonteIndicador);
-                        ind.SetPositionEx(cdrReferencePoint.cdrTopLeft, box.L, rowTop);
-                        var it = new Tag(Tag.Indicador); it["SEQ"] = seq.ToString();
-                        ind.Name = it.ToString();
-                        alturaInd = Cdr.BoxOf(ind).H + 0.5;
-                        rowShapes.Add(ind);
-                    }
-                    // deslocamento vertical: o topo do conjunto de moldes vai para baixo do indicador
-                    double dy = (rowTop - alturaInd) - box.T;
+                    var rotuloTam = Cdr.CreateText(app, layer, "(" + linha.Tamanho + ")", "Arial", cfg.FonteIndicador);
+                    rotuloTam.SetPositionEx(cdrReferencePoint.cdrTopMiddle, box.Cx, rowTop);
+                    var tagTam = new Tag(Tag.Indicador); tagTam["T"] = linha.Tamanho; tagTam["SEQ"] = seq.ToString(); tagTam["ROT"] = "TAMANHO";
+                    rotuloTam.Name = tagTam.ToString();
+                    double alturaRotulo = Cdr.BoxOf(rotuloTam).H + 0.3;
+                    rowShapes.Add(rotuloTam);
+                    // Um único tamanho centralizado acima do conjunto de moldes.
+                    double dy = (rowTop - alturaRotulo) - box.T;
 
                     foreach (var mtz in matrizes)
                     {
-                        var tpl = porTam[linha.Tamanho].FirstOrDefault(m => m.Parte == mtz.Parte);
-                        if (tpl == null)
+                        var chave = linha.Tamanho + "|" + mtz.Parte;
+                        if (!moldesPorTamanhoParte.TryGetValue(chave, out var templates))
                         {
                             Warn(res, $"Tamanho {linha.Tamanho} não tem a parte {mtz.Parte}; ignorada.");
                             continue;
                         }
-                        var tag = new Tag(Tag.Peca);
-                        tag["T"] = linha.Tamanho; tag["P"] = mtz.Parte.ToString(); tag["A"] = mtz.Apelido;
-                        tag["PED"] = pedido; tag["SEQ"] = seq.ToString();
-                        tag["N"] = linha.Nome; tag["NUM"] = linha.Numero; tag["AD"] = linha.Adicional;
+                        foreach (var tpl in templates)
+                        {
+                            var tag = new Tag(Tag.Peca);
+                            tag["T"] = linha.Tamanho; tag["P"] = mtz.Parte.ToString(); tag["A"] = mtz.Apelido;
+                            tag["PED"] = pedido; tag["SEQ"] = seq.ToString();
+                            tag["TIPO"] = linha.Tipo;
+                            tag["N"] = linha.Nome; tag["NUM"] = linha.Numero; tag["AD"] = linha.Adicional;
+                            tag["TCAM"] = linha.TamanhoCamiseta; tag["TCAL"] = linha.TamanhoCalcao;
+                            tag["QTD"] = linha.Quantidade.ToString();
 
-                        var tb = Cdr.BoxOf(tpl.Shape);
-                        var peca = BuildPiece(app, mtz.Shape, soltos[mtz.Parte], tpl.Shape, linha, tag, cfg, branco, res, tb.L, tb.T + dy);
-                        rowShapes.Add(peca);
-                        res.Criadas.Add(peca);
-                        res.Pecas++;
+                            var tb = Cdr.BoxOf(tpl.Shape);
+                            var peca = BuildPiece(app, mtz.Shape, soltos[mtz.Parte], tpl.Shape, linha, tag, cfg, branco, res, tb.L, tb.T + dy);
+                            rowShapes.Add(peca);
+                            res.Criadas.Add(peca);
+                            res.Pecas++;
+                        }
                     }
 
                     if (cfg.AgruparLinha && rowShapes.Count > 1)
-                        Cdr.Range(app, rowShapes).Group().Name = "YUNO:LINHA;SEQ=" + seq;
+                    {
+                        var grupo = Cdr.Range(app, rowShapes).Group();
+                        grupo.Name = "YUNO:LINHA;T=" + Tag.Clean(linha.Tamanho) + ";SEQ=" + seq;
+                        rowShapes = new List<Shape> { grupo };
+                    }
+                    res.Grupos.Add(new AssemblyRow
+                    {
+                        Tamanho = linha.Tamanho,
+                        TipoTamanho = cfg.UsarTamanhoCalcao ? "CALÇÃO" : "CAMISETA",
+                        Tipo = linha.Tipo,
+                        Shapes = rowShapes
+                    });
 
-                    proxTopo[linha.Tamanho] = box.B + dy - cfg.Espacamento * 2;
+                    proxTopo[linha.Tamanho] = box.B + dy - cfg.Espacamento;
                     res.Linhas++;
                     seq++;
+                    }
                 }
-            }            return res;
+            }
+            if (cfg.SepararTamanhosEmPaginas) OrganizarPaginasPorTamanho(app, doc, res.Grupos, cfg.Espacamento, cfg.AlturaMaximaMontagem, res.Avisos);
+            return res;
+        }
+
+        private static void OrganizarPaginasPorTamanho(Application app, Document doc, IList<AssemblyRow> grupos, double espacamento,
+                                                       double alturaMaxima, IList<string> avisos)
+        {
+            var agrupamentos = grupos.GroupBy(g => new
+            {
+                Tamanho = (g.Tamanho ?? "").Trim().ToUpperInvariant(),
+                TipoTamanho = (g.TipoTamanho ?? "").Trim().ToUpperInvariant(),
+                Tipo = NomeTipoJogador(g.Tipo)
+            }).ToList();
+            var nomesExistentes = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            int totalPaginas = doc.Pages.Count;
+            for (int p = 1; p <= totalPaginas; p++) nomesExistentes.Add(doc.Pages[p].Name);
+
+            foreach (var agrupamento in agrupamentos)
+            {
+                var tamanho = agrupamento.Key.Tamanho;
+                var linhas = agrupamento.ToList();
+                if (linhas.Count == 0) continue;
+
+                var referenciaPagina = doc.ActivePage;
+                double margem = Math.Max(0.5, espacamento);
+                double alturaPagina = alturaMaxima > 0 ? Math.Min(alturaMaxima, referenciaPagina.SizeHeight) : referenciaPagina.SizeHeight;
+                double alturaUtil = Math.Max(0.1, alturaPagina - margem * 2);
+                double larguraUtil = Math.Max(0.1, referenciaPagina.SizeWidth - margem * 2);
+                double larguraMax = 0;
+                double alturaMax = 0;
+                var caixas = new List<Box>();
+                foreach (var linha in linhas)
+                {
+                    var b = Cdr.BoxOf(Cdr.Range(app, linha.Shapes));
+                    caixas.Add(b);
+                    larguraMax = Math.Max(larguraMax, b.W);
+                    alturaMax = Math.Max(alturaMax, b.H);
+                }
+
+                double passoY = alturaMax + espacamento;
+                int porColuna = Math.Max(1, (int)Math.Floor((alturaUtil + espacamento) / Math.Max(0.1, passoY)));
+                int colunasPorPagina = Math.Max(1, (int)Math.Floor((larguraUtil + espacamento) / Math.Max(0.1, larguraMax + espacamento)));
+                int porPagina = Math.Max(1, porColuna * colunasPorPagina);
+                if (alturaMax > alturaUtil + 0.01)
+                    avisos.Add($"Um conjunto do tamanho {tamanho} é mais alto que o limite da página ({alturaPagina:0.##} cm); ele pode ultrapassar a área de impressão.");
+                if (larguraMax > larguraUtil + 0.01)
+                    avisos.Add($"Um conjunto do tamanho {tamanho} é mais largo que a página; ele pode ultrapassar a área de impressão.");
+
+                int quantidadePaginas = (int)Math.Ceiling(linhas.Count / (double)porPagina);
+                for (int indicePagina = 0; indicePagina < quantidadePaginas; indicePagina++)
+                {
+                    int numeroPagina = indicePagina + 1;
+                    string baseNomePagina = NomePagina(tamanho, agrupamento.Key.TipoTamanho, agrupamento.Key.Tipo);
+                    string nomePagina = numeroPagina == 1 ? baseNomePagina : baseNomePagina + "-" + numeroPagina;
+                    while (nomesExistentes.Contains(nomePagina))
+                    {
+                        numeroPagina++;
+                        nomePagina = baseNomePagina + "-" + numeroPagina;
+                    }
+                    nomesExistentes.Add(nomePagina);
+                    using (new CorelCommandGroup(doc, "YUNO: criar página " + nomePagina))
+                    {
+                        var pagina = doc.AddPages(1);
+                        pagina.Name = nomePagina;
+                        var camadaDestino = pagina.ActiveLayer;
+
+                        int inicio = indicePagina * porPagina;
+                        int fim = Math.Min(linhas.Count, inicio + porPagina);
+                        for (int i = inicio; i < fim; i++)
+                        {
+                            int indiceNaPagina = i - inicio;
+                            int coluna = indiceNaPagina / porColuna;
+                            int linhaColuna = indiceNaPagina % porColuna;
+                            double novoL = pagina.LeftX + margem + coluna * (larguraMax + espacamento);
+                            double novoT = pagina.TopY - margem - linhaColuna * passoY;
+                            double dx = novoL - caixas[i].L;
+                            double dy = novoT - caixas[i].T;
+                            // Transfere e move a linha toda em lote. Reduz chamadas COM e
+                            // entradas de desfazer quando a montagem cria muitas peças.
+                            var faixa = Cdr.Range(app, linhas[i].Shapes);
+                            faixa.MoveToLayer(camadaDestino);
+                            faixa.Move(dx, dy);
+                        }
+                    }
+                }
+            }
+        }
+
+        private static string NomePagina(string tamanho, string tipoTamanho, string tipo)
+        {
+            var partes = new[] { tamanho, tipoTamanho, tipo }.Where(s => !string.IsNullOrWhiteSpace(s)).ToArray();
+            var nome = string.Join(" - ", partes);
+            foreach (var c in new[] { '\\', '/', ':', '*', '?', '"', '<', '>', '|', '\r', '\n' }) nome = nome.Replace(c, '-');
+            nome = nome.Trim().TrimEnd('.');
+            return nome.Length > 58 ? nome.Substring(0, 58).TrimEnd() : nome;
+        }
+
+        private static string NomeTipoJogador(string tipo)
+        {
+            tipo = (tipo ?? "").Trim();
+            int separador = tipo.IndexOf('-');
+            if (separador > 0 && tipo.Substring(0, separador).Trim().All(char.IsDigit))
+                tipo = tipo.Substring(separador + 1).Trim();
+            return tipo.ToUpperInvariant();
         }
 
         static void Warn(AssemblyResult r, string msg) { if (!r.Avisos.Contains(msg)) r.Avisos.Add(msg); }
 
-        static string IndicatorText(OrderLine l, int seq)
-        {
-            var parts = new List<string> { seq.ToString("00"), l.Tamanho };
-            if (!string.IsNullOrWhiteSpace(l.Nome)) parts.Add(l.Nome);
-            if (!string.IsNullOrWhiteSpace(l.Numero)) parts.Add(l.Numero);
-            if (!string.IsNullOrWhiteSpace(l.Adicional)) parts.Add(l.Adicional);
-            return string.Join("  |  ", parts);
-        }
+        public static int NextSeq(Document doc) => NextSeq(Cdr.PageShapes(doc));
 
-        public static int NextSeq(Document doc)
+        private static int NextSeq(IEnumerable<Shape> shapes)
         {
             int max = 0;
-            foreach (var s in Cdr.PageShapes(doc))
+            foreach (var s in shapes)
             {
                 var t = Tag.Parse(s.Name);
                 if (t != null && (t.Kind == Tag.Peca || t.Kind == Tag.Indicador)) max = Math.Max(max, t.Int("SEQ"));
@@ -156,11 +288,11 @@ namespace Yuno.Engine
         /// Objetos soltos (fora do PowerClip) que estão por cima da matriz: textos, campos, gabaritos, logos.
         /// Considera os objetos do nível principal da página, mais campos marcados dentro de grupos.
         /// </summary>
-        internal static List<Shape> LooseFieldsOver(Shape matriz, List<Shape> todas)
+        internal static List<Shape> LooseFieldsOver(Shape matriz, List<Shape> todas, HashSet<int> topo = null)
         {
             var b = Cdr.BoxOf(matriz);
             int mid = matriz.StaticID;
-            var topo = new HashSet<int>(Cdr.Items(matriz.Page.Shapes).Select(s => s.StaticID));
+            topo = topo ?? new HashSet<int>(Cdr.Items(matriz.Page.Shapes).Select(s => s.StaticID));
             var r = new List<Shape>();
             foreach (var s in todas)
             {
@@ -219,6 +351,8 @@ namespace Yuno.Engine
                 var src = Cdr.BoxOf(mtz.Shape);
                 foreach (var alvo in alvos)
                 {
+                    using (new CorelCommandGroup(doc, $"YUNO: aplicar matriz {alvo.Tamanho} parte {alvo.Parte}"))
+                    {
                     if (cfg.SubstituirAoAplicar) Cdr.ClearPowerClip(alvo.Shape);
                     if (mtz.Shape.Fill.Type != cdrFillType.cdrNoFill) alvo.Shape.Fill.CopyAssign(mtz.Shape.Fill);
                     var dst = Cdr.BoxOf(alvo.Shape);
@@ -227,6 +361,7 @@ namespace Yuno.Engine
                     foreach (var g in art.Where(s => Tag.IsGab(Tag.KindOf(s.Name))).ToList()) { art.Remove(g); g.Delete(); }
                     if (art.Count > 0) Cdr.Range(app, art).AddToPowerClip(alvo.Shape, cdrTriState.cdrFalse);
                     res.Moldes++;
+                    }
                 }
                 res.Partes++;
             }

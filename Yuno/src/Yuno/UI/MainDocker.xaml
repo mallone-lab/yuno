@@ -34,7 +34,7 @@
     <TabControl x:Name="Tabs" Margin="8,0,8,4" SelectionChanged="Tabs_SelectionChanged">
 
       <!-- ============================================================ DEFINIR -->
-      <TabItem Header="Definir">
+      <TabItem Header="Montagem" Style="{StaticResource PrimaryMontarTab}">
         <ScrollViewer VerticalScrollBarVisibility="Auto">
           <StackPanel Margin="0,4,2,4">
 
@@ -89,33 +89,14 @@
               </StackPanel>
             </GroupBox>
 
-            <Expander Header="Definir pela seleção (manual ou por área)">
+            <Expander Header="Definir manga esquerda / direita">
               <StackPanel Margin="0,6,0,0">
-                <Grid>
-                  <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/><ColumnDefinition Width="60"/><ColumnDefinition Width="*"/>
-                  </Grid.ColumnDefinitions>
-                  <StackPanel>
-                    <TextBlock Text="Tamanho" Style="{StaticResource FieldLabel}"/>
-                    <ComboBox x:Name="TamanhoDef" IsEditable="True"/>
-                  </StackPanel>
-                  <StackPanel Grid.Column="1">
-                    <TextBlock Text="Parte" Style="{StaticResource FieldLabel}"/>
-                    <TextBox x:Name="ParteNum" Text="1"/>
-                  </StackPanel>
-                  <StackPanel Grid.Column="2">
-                    <TextBlock Text="Apelido (opcional)" Style="{StaticResource FieldLabel}"/>
-                    <TextBox x:Name="Apelido" ToolTip="Ex.: FRENTE, COSTAS, MANGA (só letras)"/>
-                  </StackPanel>
-                </Grid>
-                <UniformGrid Columns="2">
-                  <Button Content="Definir seleção" Click="DefinirTamanho_Click"/>
-                  <Button Content="Definir MATRIZ" Click="DefinirMatriz_Click"/>
-                </UniformGrid>
-                <TextBlock Style="{StaticResource Hint}" Margin="2,8,2,2"
-                           Text="Por área: selecione a mesma parte em todos os tamanhos, marque os tamanhos (do menor ao maior) e clique. O menor molde recebe o 1º tamanho marcado." />
-                <ListBox x:Name="TamanhosAuto" Height="110" SelectionMode="Multiple"/>
-                <Button Content="Definir por área" Click="DefinirAuto_Click"/>
+                <TextBlock Style="{StaticResource Hint}" Text="Primeiro defina os tamanhos pelo modo clique. Depois selecione uma ou várias mangas e indique o lado; o YUNO preserva tamanho e parte e acrescenta o lado ao nome."/>
+                <TextBlock Text="Lado da manga" Style="{StaticResource FieldLabel}"/>
+                <ComboBox x:Name="LadoManga" SelectedIndex="0">
+                  <ComboBoxItem Content="ESQUERDA"/><ComboBoxItem Content="DIREITA"/>
+                </ComboBox>
+                <Button Content="Definir manga selecionada" Click="DefinirManga_Click" Margin="2,6,2,0"/>
               </StackPanel>
             </Expander>
 
@@ -174,16 +155,39 @@
       </TabItem>
 
       <!-- ============================================================ PEDIDO -->
-      <TabItem Header="Pedido">
+      <TabItem Header="Pedido" Style="{StaticResource PrimaryPedidoTab}">
         <DockPanel Margin="0,4,2,4">
           <StackPanel DockPanel.Dock="Top">
-            <Button Content="☁  Pedidos online (escolher pedido)" Style="{StaticResource Primary}" Click="PedidosOnline_Click" Margin="2,2,2,6"/>
+            <GroupBox Header="Nuvem local · pedidos salvos">
+              <StackPanel>
+                <TextBox x:Name="PedidoLocalBusca" ToolTip="Buscar pedido salvo" Margin="0,0,0,4" TextChanged="PedidoLocalBusca_TextChanged"/>
+                <ListBox x:Name="PedidosLocais" Height="96" SelectionChanged="PedidosLocais_SelectionChanged" MouseDoubleClick="PedidosLocais_MouseDoubleClick">
+                  <ListBox.ItemTemplate>
+                    <DataTemplate>
+                      <StackPanel Margin="2,3">
+                        <TextBlock Text="{Binding Nome}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+                        <TextBlock Text="{Binding Resumo}" Style="{StaticResource Hint}" Margin="0"/>
+                      </StackPanel>
+                    </DataTemplate>
+                  </ListBox.ItemTemplate>
+                </ListBox>
+                <TextBlock x:Name="PedidoLocalCaminhos" Style="{StaticResource Hint}" TextWrapping="Wrap" MaxHeight="58" Margin="0,4,0,2"/>
+                <UniformGrid Columns="3">
+                  <Button Content="＋ Novo" Click="NovoPedidoLocal_Click" ToolTip="Começar um pedido novo"/>
+                  <Button Content="Salvar" Click="SalvarPedidoLocal_Click" ToolTip="Salvar ou atualizar o pedido local"/>
+                  <Button Content="Abrir / editar" Click="AbrirPedidoLocal_Click" ToolTip="Carregar o pedido selecionado para edição"/>
+                </UniformGrid>
+                <UniformGrid Columns="2">
+                  <Button Content="Abrir arquivo Corel" Click="AbrirArquivoPedidoLocal_Click"/>
+                  <Button Content="Abrir planilha" Click="AbrirPlanilhaPedidoLocal_Click"/>
+                </UniformGrid>
+              </StackPanel>
+            </GroupBox>
             <TextBlock Text="Pedido" Style="{StaticResource FieldLabel}"/>
             <TextBox x:Name="Pedido" ToolTip="Vai no ID impresso e no nome dos arquivos"/>
             <UniformGrid Columns="2" Margin="0,4,0,0">
               <Button Content="Importar planilha..." Click="Planilha_Click"/>
-              <Button Content="Colar do Excel" Click="Colar_Click"/>
-              <Button Content="Baixar modelo" Click="Modelo_Click" ToolTip="Planilha com as colunas Tipo, Nome, Número, Adicional, Tam. Camiseta, Tam. Calção, Quantidade"/>
+              <Button Content="Baixar modelo" Click="Modelo_Click" ToolTip="Planilha Excel com listas suspensas de tipo e tamanho cadastradas nas configurações"/>
               <Button Content="Limpar lista" Click="LimparLista_Click"/>
             </UniformGrid>
             <Grid Margin="0,6,0,0">
@@ -220,6 +224,71 @@
             </DataGrid.Columns>
           </DataGrid>
         </DockPanel>
+      </TabItem>
+
+      <!-- ============================================================ ORDEM DE SERVIÇO -->
+      <TabItem Header="OS">
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+          <StackPanel Margin="0,4,2,4">
+            <GroupBox Header="Identificação do pedido">
+              <StackPanel>
+                <TextBlock Text="Nome do pedido" Style="{StaticResource FieldLabel}"/>
+                <TextBox x:Name="OSNomePedido" ToolTip="Esse nome será usado no título do PDF e na pasta do pedido."/>
+                <TextBlock Text="Data de entrega" Style="{StaticResource FieldLabel}"/>
+                <DatePicker x:Name="OSDataEntrega"/>
+              </StackPanel>
+            </GroupBox>
+            <GroupBox Header="CAMISETA">
+              <StackPanel>
+                <TextBlock Text="Tipo de tecido" Style="{StaticResource FieldLabel}"/>
+                <ComboBox x:Name="OSTecido" IsEditable="True"/>
+                <TextBlock Text="Tipo de gola" Style="{StaticResource FieldLabel}"/>
+                <ComboBox x:Name="OSGola" SelectedIndex="0">
+                  <ComboBoxItem Content="Gola redonda"/><ComboBoxItem Content="Gola V"/><ComboBoxItem Content="Gola polo"/>
+                </ComboBox>
+                <TextBlock Text="Acabamento da gola" Style="{StaticResource FieldLabel}"/>
+                <ComboBox x:Name="OSAcabamentoGola" SelectedIndex="0">
+                  <ComboBoxItem Content="Selecione" IsEnabled="False"/><ComboBoxItem Content="Rebatida"/><ComboBoxItem Content="Reforço"/>
+                </ComboBox>
+                <TextBlock Text="Manga: Punho ou Barra" Style="{StaticResource FieldLabel}"/>
+                <ComboBox x:Name="OSPunho" SelectedIndex="0">
+                  <ComboBoxItem Content="Punho"/><ComboBoxItem Content="Barra"/>
+                </ComboBox>
+                <TextBlock Text="Etiqueta" Style="{StaticResource FieldLabel}"/>
+                <ComboBox x:Name="OSEtiqueta" SelectedIndex="1">
+                  <ComboBoxItem Content="Etiqueta AHC"/><ComboBoxItem Content="Sem etiqueta"/>
+                </ComboBox>
+              </StackPanel>
+            </GroupBox>
+            <GroupBox x:Name="OSGrupoCalcao" Header="CALÇÃO" Visibility="Collapsed">
+              <StackPanel>
+                <TextBlock Text="Construção do calção" Style="{StaticResource FieldLabel}"/>
+                <ComboBox x:Name="OSModeloCalcao" IsEditable="True" ToolTip="Ex.: 4 partes. Opções cadastradas nas configurações."/>
+                <TextBlock Text="Tipo/local do bolso" Style="{StaticResource FieldLabel}"/>
+                <ComboBox x:Name="OSBolsoCalcao" IsEditable="True" ToolTip="Ex.: CALÇÃO COMISSÃO - BOLSO"/>
+                <TextBlock Text="Outros detalhes do calção" Style="{StaticResource FieldLabel}"/>
+                <TextBox x:Name="OSDetalhesCalcao" ToolTip="Ex.: bolso lateral com zíper, faixa ou acabamento especial"/>
+              </StackPanel>
+            </GroupBox>
+            <GroupBox Header="Observações">
+              <StackPanel>
+                <TextBox x:Name="OSObservacoes" AcceptsReturn="True" Height="55" VerticalContentAlignment="Top" TextWrapping="Wrap"/>
+              </StackPanel>
+            </GroupBox>
+            <GroupBox Header="Logo da empresa">
+              <StackPanel>
+                <TextBlock x:Name="OSLogoCaminho" TextWrapping="Wrap" Style="{StaticResource Hint}"/>
+                <TextBlock Text="Coloque um PNG, JPG, BMP ou TIF nessa pasta. A primeira imagem encontrada será usada no PDF." Style="{StaticResource Hint}"/>
+                <Button Content="ABRIR PASTA DA LOGO" Click="AbrirPastaLogo_Click"/>
+              </StackPanel>
+            </GroupBox>
+            <GroupBox Header="Resumo detectado no CorelDRAW">
+              <TextBlock x:Name="OSResumo" TextWrapping="Wrap" FontFamily="Consolas"/>
+            </GroupBox>
+            <Button Content="GERAR ORDEM DE SERVIÇO EM PDF" Style="{StaticResource Primary}" Click="GerarOS_Click" Margin="2,8,2,2"/>
+            <TextBlock x:Name="OSDestino" Style="{StaticResource Hint}" TextWrapping="Wrap"/>
+          </StackPanel>
+        </ScrollViewer>
       </TabItem>
 
       <!-- ============================================================ FERRAMENTAS -->
@@ -346,50 +415,27 @@
       <TabItem Header="Exportar">
         <ScrollViewer VerticalScrollBarVisibility="Auto">
           <StackPanel Margin="0,4,2,4">
-            <GroupBox Header="Arquivo">
+            <GroupBox Header="Exportar pedido em PDF (50%)">
               <StackPanel>
-                <UniformGrid Columns="3">
-                  <StackPanel>
-                    <TextBlock Text="Formato" Style="{StaticResource FieldLabel}"/>
-                    <ComboBox x:Name="ExpFormato">
-                      <ComboBoxItem Content="JPG"/><ComboBoxItem Content="PDF"/><ComboBoxItem Content="TIF"/><ComboBoxItem Content="PNG"/>
-                    </ComboBox>
-                  </StackPanel>
-                  <StackPanel>
-                    <TextBlock Text="Cor" Style="{StaticResource FieldLabel}"/>
-                    <ComboBox x:Name="ExpCor">
-                      <ComboBoxItem Content="CMYK"/><ComboBoxItem Content="RGB"/>
-                    </ComboBox>
-                  </StackPanel>
-                  <StackPanel>
-                    <TextBlock Text="DPI" Style="{StaticResource FieldLabel}"/>
-                    <TextBox x:Name="ExpDpi"/>
-                  </StackPanel>
-                </UniformGrid>
-                <UniformGrid Columns="2">
-                  <StackPanel>
-                    <TextBlock Text="Tecido" Style="{StaticResource FieldLabel}"/>
-                    <ComboBox x:Name="ExpTecido"/>
-                  </StackPanel>
-                  <StackPanel>
-                    <TextBlock Text="PDF: compressão" Style="{StaticResource FieldLabel}"/>
-                    <ComboBox x:Name="ExpPdfComp">
-                      <ComboBoxItem Content="JPEG"/><ComboBoxItem Content="LZW"/>
-                    </ComboBox>
-                  </StackPanel>
-                </UniformGrid>
                 <TextBlock Text="Pasta" Style="{StaticResource FieldLabel}"/>
                 <Grid>
                   <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                   <TextBox x:Name="ExpPasta"/>
-                  <Button Grid.Column="1" Content="..." Click="EscolherPasta_Click"/>
+                  <Button Grid.Column="1" Content="Escolher pasta" Click="EscolherPasta_Click"/>
                 </Grid>
-                <TextBlock Text="Nome base (vazio = arquivo .cdr + pedido)" Style="{StaticResource FieldLabel}"/>
-                <TextBox x:Name="ExpNome"/>
-                <CheckBox x:Name="ExpUmPorObjeto" Content="Um arquivo por objeto selecionado" IsChecked="True"/>
-                <CheckBox x:Name="ExpRelatorio" Content="Gerar relatório (.txt) de partes"/>
-                <Button Content="EXPORTAR SELEÇÃO" Style="{StaticResource Primary}" Click="Exportar_Click" Margin="2,8,2,2"/>
-                <TextBlock Style="{StaticResource Hint}" Text="Segure ESC para cancelar uma exportação longa." />
+                <Button Content="EXPORTAR PEDIDO EM PDF (50%)" Style="{StaticResource PrimaryPedidoAction}" Click="ExportarPedidoPdf_Click" Margin="2,8,2,2"/>
+                <TextBlock Style="{StaticResource Hint}" Text="Gera os PDFs do pedido em 50%, separados por página/tamanho, sem alterar os moldes originais."/>
+                <!-- Mantém os controles legados carregados para preservar as configurações já salvas. -->
+                <StackPanel Visibility="Collapsed">
+                  <ComboBox x:Name="ExpFormato"><ComboBoxItem Content="JPG"/><ComboBoxItem Content="PDF"/><ComboBoxItem Content="TIF"/><ComboBoxItem Content="PNG"/></ComboBox>
+                  <ComboBox x:Name="ExpCor"><ComboBoxItem Content="CMYK"/><ComboBoxItem Content="RGB"/></ComboBox>
+                  <TextBox x:Name="ExpDpi"/>
+                  <ComboBox x:Name="ExpTecido"/>
+                  <ComboBox x:Name="ExpPdfComp"><ComboBoxItem Content="JPEG"/><ComboBoxItem Content="LZW"/></ComboBox>
+                  <TextBox x:Name="ExpNome"/>
+                  <CheckBox x:Name="ExpUmPorObjeto" IsChecked="True"/>
+                  <CheckBox x:Name="ExpRelatorio"/>
+                </StackPanel>
               </StackPanel>
             </GroupBox>
           </StackPanel>
@@ -404,6 +450,23 @@
               <StackPanel>
                 <TextBox x:Name="CfgTamanhos" AcceptsReturn="True" Height="110" VerticalScrollBarVisibility="Auto" VerticalContentAlignment="Top"/>
                 <CheckBox x:Name="CfgRotulo" Content="Criar etiqueta vermelha com o nome abaixo de cada molde"/>
+              </StackPanel>
+            </GroupBox>
+
+            <GroupBox Header="Tipos de jogador para a planilha (um por linha)">
+              <StackPanel>
+                <TextBox x:Name="CfgTiposJogador" AcceptsReturn="True" Height="78" VerticalScrollBarVisibility="Auto" VerticalContentAlignment="Top"/>
+                <TextBlock Style="{StaticResource Hint}" Text="Essas opções aparecem na lista suspensa da coluna Tipo no modelo Excel. Exemplo: 1 - Linha, 2 - Goleiro, 3 - Staff."/>
+              </StackPanel>
+            </GroupBox>
+
+            <GroupBox Header="Construções e locais de bolso do calção (uma opção por linha)">
+              <StackPanel>
+                <TextBlock Text="Construção do calção" Style="{StaticResource FieldLabel}"/>
+                <TextBox x:Name="CfgModelosCalcao" AcceptsReturn="True" Height="62" VerticalScrollBarVisibility="Auto" VerticalContentAlignment="Top"/>
+                <TextBlock Text="Tipo/local do bolso" Style="{StaticResource FieldLabel}"/>
+                <TextBox x:Name="CfgOpcoesBolsoCalcao" AcceptsReturn="True" Height="54" VerticalScrollBarVisibility="Auto" VerticalContentAlignment="Top"/>
+                <TextBlock Style="{StaticResource Hint}" Text="Inclua opções como 4 partes e CALÇÃO COMISSÃO - BOLSO. Elas aparecem somente quando o pedido tiver calção."/>
               </StackPanel>
             </GroupBox>
 
@@ -426,19 +489,20 @@
               <StackPanel>
                 <Grid>
                   <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="60"/></Grid.ColumnDefinitions>
-                  <Grid.RowDefinitions><RowDefinition/><RowDefinition/><RowDefinition/><RowDefinition/><RowDefinition/><RowDefinition/></Grid.RowDefinitions>
+                  <Grid.RowDefinitions><RowDefinition/><RowDefinition/><RowDefinition/><RowDefinition/><RowDefinition/><RowDefinition/><RowDefinition/></Grid.RowDefinitions>
                   <Label Content="Largura máx. do NOME (% do molde)"/><TextBox x:Name="CfgLargNome" Grid.Column="1"/>
                   <Label Grid.Row="1" Content="Largura máx. do Nº (% do molde)"/><TextBox x:Name="CfgLargNum" Grid.Row="1" Grid.Column="1"/>
                   <Label Grid.Row="2" Content="Largura máx. do ADIC. (% do molde)"/><TextBox x:Name="CfgLargAd" Grid.Row="2" Grid.Column="1"/>
                   <Label Grid.Row="3" Content="Espaço entre peças (cm)"/><TextBox x:Name="CfgEspaco" Grid.Row="3" Grid.Column="1"/>
-                  <Label Grid.Row="4" Content="Fonte do indicador (pt)"/><TextBox x:Name="CfgFonteInd" Grid.Row="4" Grid.Column="1"/>
+                  <Label Grid.Row="4" Content="Fonte do tamanho (pt)"/><TextBox x:Name="CfgFonteInd" Grid.Row="4" Grid.Column="1"/>
                   <Label Grid.Row="5" Content="Folga do texto até a borda da peça (%)"/><TextBox x:Name="CfgMargem" Grid.Row="5" Grid.Column="1"/>
+                  <Label Grid.Row="6" Content="Altura máx. por página (cm, 0 = altura atual)"/><TextBox x:Name="CfgAlturaPagina" Grid.Row="6" Grid.Column="1"/>
                 </Grid>
                 <CheckBox x:Name="CfgNomeMaius" Content="NOME em maiúsculas"/>
                 <CheckBox x:Name="CfgAdMaius" Content="ADICIONAL em maiúsculas"/>
                 <CheckBox x:Name="CfgAjustarGab" Content="Aumentar texto para preencher o gabarito"/>
-                <CheckBox x:Name="CfgIndicador" Content="Criar indicador acima de cada linha"/>
                 <CheckBox x:Name="CfgAgrupar" Content="Agrupar cada linha após montar"/>
+                <CheckBox x:Name="CfgPaginasTamanho" Content="Separar por tamanho em páginas e colunas"/>
                 <CheckBox x:Name="CfgBranco" Content="Matriz sem cor: preencher peças de branco"/>
               </StackPanel>
             </GroupBox>
@@ -461,23 +525,19 @@
               </StackPanel>
             </GroupBox>
 
-            <GroupBox Header="Pedidos online (Supabase)">
-              <StackPanel>
-                <TextBlock Text="Endereço do projeto (https://xxxx.supabase.co)" Style="{StaticResource FieldLabel}"/>
-                <TextBox x:Name="CfgSupaUrl"/>
-                <TextBlock Text="Chave SECRETA (service_role / sb_secret_...)" Style="{StaticResource FieldLabel}"/>
-                <TextBox x:Name="CfgSupaChave"/>
-                <TextBlock Text="Endereço do formulário web (onde está o index.html)" Style="{StaticResource FieldLabel}"/>
-                <TextBox x:Name="CfgLinkForm"/>
-                <TextBlock Style="{StaticResource Hint}" Text="A chave secreta fica só neste computador. Nunca coloque ela no formulário web."/>
-              </StackPanel>
-            </GroupBox>
-
-            <GroupBox Header="Tecidos (nome;largura cm, um por linha)">
+            <GroupBox Header="Tipos de tecido para OS e exportação (nome;largura cm, um por linha)">
               <StackPanel>
                 <TextBox x:Name="CfgTecidos" AcceptsReturn="True" Height="70" VerticalScrollBarVisibility="Auto" VerticalContentAlignment="Top"/>
+                <TextBlock Style="{StaticResource Hint}" Text="Cadastre aqui uma opção por linha. Esses nomes aparecem na lista Tipo de tecido da aba OS. Exemplo: Dry Fit;150"/>
                 <TextBlock Text="Pasta do relatório" Style="{StaticResource FieldLabel}"/>
                 <TextBox x:Name="CfgPastaRel"/>
+                <TextBlock Text="Pasta dos pedidos da Nuvem Local" Style="{StaticResource FieldLabel}"/>
+                <Grid>
+                  <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                  <TextBox x:Name="CfgPastaPedidos" ToolTip="Pasta local ou pasta de rede compartilhada entre os computadores"/>
+                  <Button Grid.Column="1" Content="Escolher pasta" Click="EscolherPastaPedidos_Click"/>
+                </Grid>
+                <TextBlock Style="{StaticResource Hint}" Text="Por padrão, os pedidos ficam neste computador. Para compartilhar na rede, escolha uma pasta compartilhada acessível pelos outros PCs."/>
               </StackPanel>
             </GroupBox>
 

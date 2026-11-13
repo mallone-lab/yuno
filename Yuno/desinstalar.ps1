@@ -1,14 +1,7 @@
-﻿# Remove o YUNO do CorelDRAW 2026. As configurações em %APPDATA%\Yuno são mantidas.
-param([string]$CorelDir = "C:\Program Files\Corel\CorelDRAW Graphics Suite\27\Programs64")
-
-$admin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
-if (-not $admin) {
-    Start-Process powershell -Verb RunAs -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`" -CorelDir `"$CorelDir`""
-    exit
-}
-if (Get-Process CorelDRW -ErrorAction SilentlyContinue) { Write-Host "Feche o CorelDRAW antes." -ForegroundColor Red }
-else {
-    Remove-Item (Join-Path $CorelDir "Addons\Yuno") -Recurse -Force -ErrorAction SilentlyContinue
-    Write-Host "YUNO removido." -ForegroundColor Green
-}
-Read-Host "Pressione Enter para fechar"
+# Use the registered uninstaller for each Corel installation.
+param([Parameter(Mandatory=$true)][string]$CorelDir)
+$ErrorActionPreference = 'Stop'
+$resolved = (Resolve-Path -LiteralPath $CorelDir).Path
+$setup = Join-Path $resolved 'Addons\Yuno\YunoSetup.exe'
+if (-not (Test-Path -LiteralPath $setup)) { throw 'YUNO uninstaller not found. Use Windows Settings > Apps.' }
+Start-Process -FilePath $setup -Verb RunAs -WindowStyle Hidden -Wait -ArgumentList @('/desinstalar', ('"/corel:' + $resolved + '"'))

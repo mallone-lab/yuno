@@ -23,8 +23,8 @@ namespace Yuno.Engine
     }
 
     /// <summary>
-    /// Abre um bloco de operação no Corel: unidade em cm, um único "desfazer",
-    /// otimização ligada. Restaura tudo no Dispose.
+    /// Prepara uma operação no Corel: unidade em cm, otimização ligada e, quando
+    /// solicitado, um grupo de "desfazer". Restaura o estado sempre no Dispose.
     /// </summary>
     public sealed class CorelScope : IDisposable
     {
@@ -32,28 +32,69 @@ namespace Yuno.Engine
         private readonly cdrUnit _oldUnit;
         private readonly bool _oldOpt;
         private readonly bool _oldEvents;
+        private readonly bool _groupUndo;
+        private bool _groupOpened;
         public Document Doc { get; }
 
-        public CorelScope(Application app, string undoName)
+        public CorelScope(Application app, string undoName, bool groupUndo = true)
         {
             _app = app ?? throw new UserException("CorelDRAW não disponível.");
             Doc = app.ActiveDocument ?? throw new UserException("Nenhum documento aberto.");
             _oldUnit = Doc.Unit;
-            Doc.Unit = cdrUnit.cdrCentimeter;
-            Doc.BeginCommandGroup(undoName);
             _oldOpt = app.Optimization;
             _oldEvents = app.EventsEnabled;
-            app.Optimization = true;
-            app.EventsEnabled = false;
+            _groupUndo = groupUndo;
+            try
+            {
+                Doc.Unit = cdrUnit.cdrCentimeter;
+                app.Optimization = true;
+                app.EventsEnabled = false;
+                if (_groupUndo)
+                {
+                    Doc.BeginCommandGroup(undoName);
+                    _groupOpened = true;
+                }
+            }
+            catch
+            {
+                try { if (_groupOpened) Doc.EndCommandGroup(); } catch { }
+                try { app.EventsEnabled = _oldEvents; } catch { }
+                try { app.Optimization = _oldOpt; } catch { }
+                try { Doc.Unit = _oldUnit; } catch { }
+                throw;
+            }
         }
 
         public void Dispose()
         {
+            try { if (_groupOpened) Doc.EndCommandGroup(); } catch { }
             try { _app.EventsEnabled = _oldEvents; } catch { }
             try { _app.Optimization = _oldOpt; } catch { }
-            try { Doc.EndCommandGroup(); } catch { }
             try { Doc.Unit = _oldUnit; } catch { }
-            try { _app.Refresh(); } catch { }
+            // Desativar Optimization e reativar eventos já solicita a atualização
+            // necessária ao Corel. Refresh() força redesenho total e fica muito caro
+            // em documentos com milhares de formas.
+        }
+    }
+
+    /// <summary>Grupo pequeno de desfazer para tarefas extensas, sempre fechado ao sair do bloco.</summary>
+    public sealed class CorelCommandGroup : IDisposable
+    {
+        private readonly Document _doc;
+        private bool _opened;
+
+        public CorelCommandGroup(Document doc, string name)
+        {
+            _doc = doc ?? throw new UserException("Nenhum documento aberto.");
+            _doc.BeginCommandGroup(name);
+            _opened = true;
+        }
+
+        public void Dispose()
+        {
+            if (!_opened) return;
+            _opened = false;
+            _doc.EndCommandGroup();
         }
     }
 
@@ -204,10 +245,10 @@ namespace Yuno.Engine
             if (!Inside(molde, cx, y)) return -1;
             double Edge(int dir)
             {
-                double step = Math.Max(mb.W / 60, 0.05), d = 0;
+                double step = Math.Max(mb.W / 48, 0.05), d = 0;
                 while (d < mb.W && Inside(molde, cx + dir * (d + step), y)) d += step;
                 double lo = d, hi = d + step;                 // refina a borda por bisseção
-                for (int i = 0; i < 8; i++)
+                for (int i = 0; i < 7; i++)
                 {
                     double mid = (lo + hi) / 2;
                     if (Inside(molde, cx + dir * mid, y)) lo = mid; else hi = mid;
@@ -224,22 +265,24 @@ namespace Yuno.Engine
         public static void FitInsideShape(Shape t, Shape molde, double margem, double maxW)
         {
             var mb = BoxOf(molde);
-            for (int iter = 0; iter < 4; iter++)
+            var b = BoxOf(t);
+            if (b.W <= 0 || b.H <= 0) return;
+            double livre = double.MaxValue;
+            // Três cortes representam o topo, meio e base do texto. Cada verificação
+            // chama o Corel via COM, então cinco cortes repetidos por iteração eram
+            // um custo alto em pedidos com muitas peças.
+            foreach (var y in new[] { b.B + b.H * 0.15, b.Cy, b.B + b.H * 0.85 })
             {
-                var b = BoxOf(t);
-                if (b.W <= 0 || b.H <= 0) return;
-                double livre = double.MaxValue;
-                foreach (var y in new[] { b.B, b.B + b.H * 0.25, b.Cy, b.B + b.H * 0.75, b.T })
-                {
-                    double h = HalfSpan(molde, mb, b.Cx, y);
-                    if (h >= 0) livre = Math.Min(livre, h * 2);
-                }
-                double limite = livre == double.MaxValue ? double.MaxValue : livre * (1 - margem);
-                if (maxW > 0) limite = Math.Min(limite, maxW);
-                if (limite == double.MaxValue || b.W <= limite + 1e-4) return;
-                double k = limite / b.W;
-                t.SetSizeEx(b.Cx, b.Cy, b.W * k, b.H * k);
+                double h = HalfSpan(molde, mb, b.Cx, y);
+                if (h >= 0) livre = Math.Min(livre, h * 2);
             }
+            double limite = livre == double.MaxValue ? double.MaxValue : livre * (1 - margem);
+            if (maxW > 0) limite = Math.Min(limite, maxW);
+            if (limite == double.MaxValue || b.W <= limite + 1e-4) return;
+            // Reduzir largura também reduz altura proporcionalmente; o centro fica
+            // estável, então não é necessário repetir as consultas de contorno.
+            double k = Math.Max(0, limite / b.W);
+            t.SetSizeEx(b.Cx, b.Cy, b.W * k, b.H * k);
         }
 
         /// <summary>Reduz (ou ajusta) a forma proporcionalmente para caber em maxW x maxH, mantendo o centro.</summary>

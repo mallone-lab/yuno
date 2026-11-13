@@ -20,12 +20,11 @@
     <Reference Include="Corel.Interop.VGCore">
       <HintPath>$(CorelDir)\Assemblies\Corel.Interop.VGCore.dll</HintPath>
       <Private>false</Private>
-      <EmbedInteropTypes>false</EmbedInteropTypes>
+      <EmbedInteropTypes>true</EmbedInteropTypes>
     </Reference>
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Runtime.Serialization" />
-    <Reference Include="System.Web" />
-    <Reference Include="System.Web.Extensions" />
+    <Reference Include="System.IO.Compression" />
     <Reference Include="System.Net.Http" />
   </ItemGroup>
 

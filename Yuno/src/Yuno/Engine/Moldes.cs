@@ -56,7 +56,26 @@ namespace Yuno.Engine
         }
 
         public static List<MoldeInfo> FindAll(Document doc)
-            => Cdr.PageShapes(doc).Where(s => s.Type != cdrShapeType.cdrTextShape).Select(Info).Where(i => i != null).ToList();
+        {
+            var result = new List<MoldeInfo>();
+            foreach (var shape in Cdr.Items(doc.ActivePage.Shapes)) Find(shape, result);
+            return result;
+        }
+
+        private static void Find(Shape shape, List<MoldeInfo> result)
+        {
+            if (shape == null || shape.Type == cdrShapeType.cdrTextShape) return;
+            var info = Info(shape);
+            if (info != null)
+            {
+                // Quando o próprio grupo já está marcado como molde, os filhos fazem
+                // parte dele; não devem ser contados de novo como moldes separados.
+                result.Add(info);
+                return;
+            }
+            if (!Cdr.IsGroup(shape)) return;
+            foreach (var child in Cdr.Items(shape.Shapes)) Find(child, result);
+        }
 
         public static string CleanApelido(string a)
         {
@@ -100,23 +119,26 @@ namespace Yuno.Engine
             return list.Count;
         }
 
-        /// <summary>
-        /// Definição automática: as formas de UMA parte em todos os tamanhos são ordenadas
-        /// pela área (menor → maior) e recebem os tamanhos na ordem da lista.
-        /// </summary>
-        public static int AutoDefine(Application app, IEnumerable<Shape> shapes, IList<string> tamanhosEmOrdem, int parte, string apelido, Config cfg)
+        /// <summary>Marca moldes já definidos como manga esquerda ou direita, mantendo tamanho e parte.</summary>
+        public static int DefinirLadoManga(Application app, IEnumerable<Shape> shapes, string lado, Config cfg)
         {
-            var list = shapes.Where(s => Info(s)?.IsMatriz != true).ToList();
-            if (list.Count == 0) throw new UserException("Selecione os moldes da parte em todos os tamanhos.");
-            if (list.Count != tamanhosEmOrdem.Count)
-                throw new UserException($"Foram selecionados {list.Count} moldes, mas há {tamanhosEmOrdem.Count} tamanhos marcados. As quantidades precisam ser iguais.");
-            var open = list.Where(s => !Cdr.IsClosed(s)).ToList();
-            if (open.Count > 0) throw new UserException($"{open.Count} objeto(s) não são curvas fechadas.");
+            lado = (lado ?? "").Trim().ToUpperInvariant();
+            if (lado != "ESQUERDA" && lado != "DIREITA") throw new UserException("Escolha manga esquerda ou direita.");
+            var list = shapes?.Distinct().ToList() ?? new List<Shape>();
+            if (list.Count == 0) throw new UserException("Selecione uma ou mais mangas já definidas por tamanho.");
+            var infos = list.Select(s => Info(s)).ToList();
+            if (infos.Any(m => m == null || m.IsMatriz))
+                throw new UserException("Defina primeiro o tamanho da manga no modo clique; depois selecione-a aqui para indicar o lado.");
 
-            var ordered = list.Select(s => new { s, a = Cdr.AreaOf(s) }).OrderBy(x => x.a).ToList();
-            for (int i = 0; i < ordered.Count; i++)
-                Define(app, new[] { ordered[i].s }, tamanhosEmOrdem[i], parte, apelido, cfg);
-            return ordered.Count;
+            var partes = new HashSet<int>(infos.Select(m => m.Parte));
+            var todaParte = FindAll(app.ActiveDocument).Where(m => partes.Contains(m.Parte)).ToList();
+            foreach (var m in todaParte)
+            {
+                RemoveLabel(app.ActiveDocument, m.Shape);
+                m.Shape.Name = NomeDe(m.Tamanho, m.Parte, lado);
+                if (cfg.CriarRotulo) MakeLabel(app, m.Shape, m.Tamanho, m.Parte, lado);
+            }
+            return partes.Count;
         }
 
         public static int Undefine(Application app, IEnumerable<Shape> shapes)
@@ -137,7 +159,13 @@ namespace Yuno.Engine
         static void RemoveLabel(Document doc, Shape molde)
         {
             var r = LabelRef(molde);
-            foreach (var l in Cdr.PageShapes(doc).Where(x => { var t = Tag.Parse(x.Name); return t?.Kind == Tag.Rotulo && t["REF"] == r; }).ToList())
+            // Os rótulos são criados na mesma camada e no nível superior do molde.
+            // Examinar todos os filhos de todos os grupos da página em cada clique
+            // tornava a definição lenta em arquivos grandes.
+            Shapes layerShapes;
+            try { layerShapes = molde.Layer.Shapes; }
+            catch { layerShapes = doc.ActivePage.Shapes; }
+            foreach (var l in Cdr.Items(layerShapes).Where(x => { var t = Tag.Parse(x.Name); return t?.Kind == Tag.Rotulo && t["REF"] == r; }).ToList())
                 l.Delete();
         }
 

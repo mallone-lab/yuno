@@ -14,7 +14,8 @@
     <ProjectReference Include="..\..\src\Yuno\Yuno.csproj" />
     <Reference Include="Corel.Interop.VGCore">
       <HintPath>$(CorelDir)\Assemblies\Corel.Interop.VGCore.dll</HintPath>
-      <Private>true</Private>
+      <Private>false</Private>
+      <EmbedInteropTypes>true</EmbedInteropTypes>
     </Reference>
   </ItemGroup>
 
